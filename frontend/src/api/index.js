@@ -1,0 +1,93 @@
+const API_URL = 'http://localhost:3000';
+
+const getHeaders = () => ({
+  'Content-Type': 'application/json',
+  Authorization: `Bearer ${localStorage.getItem('token')}`
+});
+
+export const api = {
+  auth: {
+    register: (data) => fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(res => res.json()),
+
+    login: (data) => fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(res => res.json())
+  },
+
+  coches: {
+    list: () => fetch(`${API_URL}/coches`, { headers: getHeaders() }).then(res => res.json()),
+    create: (data) => fetch(`${API_URL}/coches`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(res => res.json()),
+    delete: (id) => fetch(`${API_URL}/coches/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    }).then(res => res.json())
+  },
+
+  citas: {
+    list: () => fetch(`${API_URL}/citas`, { headers: getHeaders() }).then(res => res.json()),
+    create: (data) => fetch(`${API_URL}/citas`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(res => res.json()),
+    updateEstado: (id, estado) => fetch(`${API_URL}/citas/${id}/estado`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ estado })
+    }).then(res => res.json())
+  },
+
+  trabajos: {
+    list: () => fetch(`${API_URL}/trabajos`, { headers: getHeaders() }).then(res => res.json()),
+    create: (data) => fetch(`${API_URL}/trabajos`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(res => res.json()),
+    update: (id, data) => fetch(`${API_URL}/trabajos/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(res => res.json())
+  },
+
+  historial: {
+    list: () => fetch(`${API_URL}/historial`, { headers: getHeaders() }).then(res => res.json())
+  },
+
+  anomalias: {
+    list: () => fetch(`${API_URL}/anomalias`, { headers: getHeaders() }).then(res => res.json()),
+    create: (data) => fetch(`${API_URL}/anomalias`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(res => res.json()),
+    updateEstado: (id, estado) => fetch(`${API_URL}/anomalias/${id}/estado`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ estado })
+    }).then(res => res.json())
+  },
+
+  inventario: {
+    list: () => fetch(`${API_URL}/inventario`, { headers: getHeaders() }).then(res => res.json())
+  },
+
+  facturas: {
+    list: () => fetch(`${API_URL}/facturas`, { headers: getHeaders() }).then(res => res.json())
+  },
+
+  notificaciones: {
+    list: () => fetch(`${API_URL}/notificaciones`, { headers: getHeaders() }).then(res => res.json())
+  }
+};

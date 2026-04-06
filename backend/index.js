@@ -7,7 +7,23 @@ app.use(express.json());
 
 // Conectar rutas de auth
 const authRouter = require('./routes/auth');
+const cochesRouter = require('./routes/coches');
+const citasRouter = require('./routes/citas');
+const trabajosRouter = require('./routes/trabajos');
+const historialRouter = require('./routes/historial');
+const inventarioRouter = require('./routes/inventario');
+const facturasRouter = require('./routes/facturas');
+const anomaliasRouter = require('./routes/anomalias');
+const notificacionesRouter = require('./routes/notificaciones');
 app.use('/auth', authRouter);
+app.use('/coches', cochesRouter);
+app.use('/citas', citasRouter);
+app.use('/trabajos', trabajosRouter);
+app.use('/historial', historialRouter);
+app.use('/inventario', inventarioRouter);
+app.use('/facturas', facturasRouter);
+app.use('/anomalias', anomaliasRouter);
+app.use('/notificaciones', notificacionesRouter);
 
 // Ruta de prueba
 app.get('/', (req, res) => {
