@@ -98,7 +98,16 @@ export const api = {
   },
 
   inventario: {
-    list: () => fetch(`${API_URL}/inventario`, { headers: getHeaders() }).then(res => res.json())
+    list: () => fetch(`${API_URL}/inventario`, { headers: getHeaders() }).then(res => res.json()),
+    create: (data) => fetch(`${API_URL}/inventario`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(res => res.json()),
+    delete: (id) => fetch(`${API_URL}/inventario/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    }).then(res => res.json())
   },
 
   facturas: {

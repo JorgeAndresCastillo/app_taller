@@ -66,6 +66,13 @@ router.put("/:id", authenticate, async (req, res) => {
 
 router.delete("/:matricula", authenticate, async (req, res) => {
   try {
+    const coche = await pool.query("SELECT id FROM coches WHERE matricula = $1", [req.params.matricula]);
+    if (coche.rows.length === 0) return res.status(404).json({ msg: "Coche no encontrado" });
+    const cocheId = coche.rows[0].id;
+    await pool.query("DELETE FROM historial WHERE coche_id = $1", [cocheId]);
+    await pool.query("DELETE FROM citas WHERE coche_id = $1", [cocheId]);
+    await pool.query("DELETE FROM trabajos WHERE coche_id = $1", [cocheId]);
+    await pool.query("DELETE FROM anomalias WHERE coche_id = $1", [cocheId]);
     let query, params;
     if (req.user.rol === "admin") {
       query = "DELETE FROM coches WHERE matricula = $1 RETURNING *";
@@ -75,7 +82,6 @@ router.delete("/:matricula", authenticate, async (req, res) => {
       params = [req.params.matricula, req.user.id];
     }
     const result = await pool.query(query, params);
-    if (result.rows.length === 0) return res.status(404).json({ msg: "Coche no encontrado" });
     res.json({ msg: "Coche eliminado" });
   } catch (err) {
     console.error(err.message);

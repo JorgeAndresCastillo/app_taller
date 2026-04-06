@@ -35,7 +35,7 @@ const Dashboard = () => {
       };
       if (fetchers[activeTab]) {
         const result = await fetchers[activeTab]();
-        setData(prev => ({ ...prev, [activeTab]: result }));
+        setData(prev => ({ ...prev, [activeTab]: Array.isArray(result) ? result : [] }));
       }
     } catch (err) {
       console.error(err);
@@ -44,12 +44,16 @@ const Dashboard = () => {
   };
 
   const handleDelete = async (id, tipo) => {
-    if (!confirm('¿Eliminar?')) return;
+    if (!confirm('¿Eliminar ' + tipo + ' con ID ' + id + '?')) return;
     try {
       if (tipo === 'usuarios') await api.usuarios.delete(id);
       else if (tipo === 'coches') await api.coches.delete(id);
-      loadData();
+      else if (tipo === 'inventario') await api.inventario.delete(id);
+      setData(prev => ({ ...prev, [tipo]: prev[tipo]?.filter(item => 
+        tipo === 'coches' ? item.matricula !== id : item.id !== id
+      )}));
     } catch (err) {
+      alert('Error al eliminar');
       console.error(err);
     }
   };
@@ -107,11 +111,13 @@ const Dashboard = () => {
       else if (activeTab === 'coches') await api.coches.create(formData);
       else if (activeTab === 'citas') await api.citas.create(formData);
       else if (activeTab === 'trabajos') await api.trabajos.create(formData);
+      else if (activeTab === 'inventario') await api.inventario.create(formData);
       else if (activeTab === 'anomalias') await api.anomalias.create(formData);
       setShowModal(false);
       setFormData({});
       loadData();
     } catch (err) {
+      alert('Error al guardar');
       console.error(err);
     }
   };
@@ -137,16 +143,18 @@ const Dashboard = () => {
     const columns = getColumns(tab);
     const items = data[tab] || [];
     const canDelete = isAdmin && ['usuarios', 'coches', 'citas', 'trabajos', 'inventario', 'anomalias'].includes(tab);
-    
-    if (items.length === 0) return <p>No hay datos</p>;
+    const canCreate = isAdmin && getFormFields().length > 0;
     
     return (
       <>
-        {isAdmin && getFormFields().length > 0 && (
+        {canCreate && (
           <button onClick={() => { setShowModal(true); setFormData({}); }} style={styles.addBtn}>
             + Agregar {tab}
           </button>
         )}
+        {items.length === 0 ? (
+          <p style={{marginTop: '20px'}}>No hay datos</p>
+        ) : (
         <table style={styles.table}>
           <thead>
             <tr>
@@ -167,6 +175,7 @@ const Dashboard = () => {
             ))}
           </tbody>
         </table>
+        )}
       </>
     );
   };
