@@ -1,0 +1,92 @@
+# APP_TALLER - Instrucciones de Inicio
+# ============================
+
+## LINUX
+# --------
+
+# 1. Entrar a la carpeta del proyecto
+cd /home/snowcast/Documentos/taller
+
+# 2. Backend - Instalar dependencias
+cd backend
+npm install
+
+# 3. Backend - Iniciar servidor
+node index.js
+
+# 4. Frontend - Abrir otra terminal
+cd frontend
+npm install
+npm run dev
+
+# 5. Abrir en navegador
+# http://localhost:5173
+
+
+
+## WINDOWS
+# --------
+
+# 1. Entrar a la carpeta del proyecto
+cd C:\Users\TU_USUARIO\Documentos\taller
+
+# 2. Backend - Instalar dependencias
+cd backend
+npm install
+
+# 3. Backend - Iniciar servidor
+node index.js
+
+# 4. Frontend - Abrir otra terminal
+cd frontend
+npm install
+npm run dev
+
+# 5. Abrir en navegador
+# http://localhost:5173
+
+
+
+## BASE DE DATOS (PostgreSQL)
+# --------
+
+# Asegurate de tener PostgreSQL instalado y corriendo
+# La base de datos "taller" debe existir con el usuario "taller_user"
+
+# Credenciales en backend/db.js:
+#   user: taller_user
+#   host: localhost
+#   database: taller
+#   password: Andres56c
+#   port: 5432
+
+
+
+## USUARIOS DE PRUEBA
+# --------
+
+# Admin:
+#   Email: admin@taller.com
+#   Contraseña: Admin123
+
+# Cliente:
+#   Email: test@prueba.com
+#   Contraseña: test123
+
+
+
+## ENDPOINTS DEL BACKEND
+# --------
+
+# http://localhost:3000/
+# http://localhost:3000/auth/register
+# http://localhost:3000/auth/login
+# http://localhost:3000/usuarios
+# http://localhost:3000/coches
+# http://localhost:3000/citas
+# http://localhost:3000/trabajos
+# http://localhost:3000/inventario
+# http://localhost:3000/facturas
+# http://localhost:3000/historial
+# http://localhost:3000/anomalias
+# http://localhost:3000/notificaciones
