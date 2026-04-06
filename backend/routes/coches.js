@@ -64,12 +64,17 @@ router.put("/:id", authenticate, async (req, res) => {
   }
 });
 
-router.delete("/:id", authenticate, async (req, res) => {
+router.delete("/:matricula", authenticate, async (req, res) => {
   try {
-    const result = await pool.query(
-      "DELETE FROM coches WHERE id = $1 AND cliente_id = $2 RETURNING *",
-      [req.params.id, req.user.id]
-    );
+    let query, params;
+    if (req.user.rol === "admin") {
+      query = "DELETE FROM coches WHERE matricula = $1 RETURNING *";
+      params = [req.params.matricula];
+    } else {
+      query = "DELETE FROM coches WHERE matricula = $1 AND cliente_id = $2 RETURNING *";
+      params = [req.params.matricula, req.user.id];
+    }
+    const result = await pool.query(query, params);
     if (result.rows.length === 0) return res.status(404).json({ msg: "Coche no encontrado" });
     res.json({ msg: "Coche eliminado" });
   } catch (err) {

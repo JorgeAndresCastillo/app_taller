@@ -4,38 +4,200 @@ import { api } from '../api';
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState('coches');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({});
 
-  const tabs = ['coches', 'citas', 'trabajos', 'historial', 'anomalias'];
+  const isAdmin = user?.rol === 'admin';
+
+  const tabs = isAdmin 
+    ? ['dashboard', 'usuarios', 'coches', 'citas', 'trabajos', 'inventario', 'facturas', 'historial', 'anomalias']
+    : ['dashboard', 'coches', 'citas', 'trabajos', 'historial', 'anomalias'];
 
   useEffect(() => {
-    loadData();
+    if (activeTab !== 'dashboard') loadData();
   }, [activeTab]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       const fetchers = {
+        usuarios: api.usuarios.list,
         coches: api.coches.list,
         citas: api.citas.list,
         trabajos: api.trabajos.list,
+        inventario: api.inventario.list,
+        facturas: api.facturas.list,
         historial: api.historial.list,
         anomalias: api.anomalias.list
       };
-      const result = await fetchers[activeTab]();
-      setData(prev => ({ ...prev, [activeTab]: result }));
+      if (fetchers[activeTab]) {
+        const result = await fetchers[activeTab]();
+        setData(prev => ({ ...prev, [activeTab]: result }));
+      }
     } catch (err) {
       console.error(err);
     }
     setLoading(false);
   };
 
+  const handleDelete = async (id, tipo) => {
+    if (!confirm('¿Eliminar?')) return;
+    try {
+      if (tipo === 'usuarios') await api.usuarios.delete(id);
+      else if (tipo === 'coches') await api.coches.delete(id);
+      loadData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const getColumns = (tab) => {
+    const columnsMap = {
+      usuarios: ['id', 'nombre', 'dni', 'email', 'movil', 'rol'],
+      coches: ['matricula', 'marca', 'modelo', 'año', 'kilometraje', 'cliente_nombre'],
+      citas: ['id', 'fecha', 'hora', 'estado', 'descripcion', 'matricula'],
+      trabajos: ['id', 'descripcion', 'precio', 'estado', 'matricula'],
+      inventario: ['id', 'nombre', 'categoria', 'stock', 'precio_venta'],
+      facturas: ['id', 'fecha', 'total', 'estado'],
+      historial: ['id', 'tipo', 'descripcion', 'fecha', 'precio'],
+      anomalias: ['id', 'descripcion', 'estado', 'prioridad', 'matricula']
+    };
+    return columnsMap[tab] || [];
+  };
+
+  const renderDashboard = () => (
+    <div style={styles.statsGrid}>
+      <div style={styles.statCard}>
+        <h3>Coches</h3>
+        <p style={styles.statNumber}>{data.coches?.length || 0}</p>
+      </div>
+      <div style={styles.statCard}>
+        <h3>Citas</h3>
+        <p style={styles.statNumber}>{data.citas?.length || 0}</p>
+      </div>
+      <div style={styles.statCard}>
+        <h3>Trabajos</h3>
+        <p style={styles.statNumber}>{data.trabajos?.length || 0}</p>
+      </div>
+      {isAdmin && (
+        <>
+          <div style={styles.statCard}>
+            <h3>Usuarios</h3>
+            <p style={styles.statNumber}>{data.usuarios?.length || 0}</p>
+          </div>
+          <div style={styles.statCard}>
+            <h3>Inventario</h3>
+            <p style={styles.statNumber}>{data.inventario?.length || 0}</p>
+          </div>
+          <div style={styles.statCard}>
+            <h3>Facturas</h3>
+            <p style={styles.statNumber}>{data.facturas?.length || 0}</p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  const handleCreate = async () => {
+    try {
+      if (activeTab === 'usuarios') await api.usuarios.create(formData);
+      else if (activeTab === 'coches') await api.coches.create(formData);
+      else if (activeTab === 'citas') await api.citas.create(formData);
+      else if (activeTab === 'trabajos') await api.trabajos.create(formData);
+      else if (activeTab === 'anomalias') await api.anomalias.create(formData);
+      setShowModal(false);
+      setFormData({});
+      loadData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const getFormFields = () => {
+    const fields = {
+      usuarios: ['nombre', 'dni', 'email', 'contraseña', 'movil', 'rol'],
+      coches: ['matricula', 'marca', 'modelo', 'año', 'kilometraje'],
+      citas: ['coche_id', 'fecha', 'hora', 'descripcion'],
+      trabajos: ['coche_id', 'descripcion', 'precio'],
+      inventario: ['nombre', 'descripcion', 'categoria', 'stock', 'precio_compra', 'precio_venta'],
+      anomalias: ['coche_id', 'descripcion', 'prioridad']
+    };
+    return fields[activeTab] || [];
+  };
+
+  const getDeleteId = (item, tab) => {
+    if (tab === 'coches') return item.matricula;
+    return item.id;
+  };
+
+  const renderTable = (tab) => {
+    const columns = getColumns(tab);
+    const items = data[tab] || [];
+    const canDelete = isAdmin && ['usuarios', 'coches', 'citas', 'trabajos', 'inventario', 'anomalias'].includes(tab);
+    
+    if (items.length === 0) return <p>No hay datos</p>;
+    
+    return (
+      <>
+        {isAdmin && getFormFields().length > 0 && (
+          <button onClick={() => { setShowModal(true); setFormData({}); }} style={styles.addBtn}>
+            + Agregar {tab}
+          </button>
+        )}
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              {columns.map(col => <th key={col} style={styles.th}>{col}</th>)}
+              {canDelete && <th style={styles.th}>Acciones</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item, i) => (
+              <tr key={i}>
+                {columns.map(col => <td key={col} style={styles.td}>{String(item[col] || '')}</td>)}
+                {canDelete && (
+                  <td style={styles.td}>
+                    <button onClick={() => handleDelete(getDeleteId(item, tab), tab)} style={styles.deleteBtn}>X</button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </>
+    );
+  };
+
+  const renderModal = () => (
+    <div style={styles.modalOverlay}>
+      <div style={styles.modal}>
+        <h3>Agregar {activeTab}</h3>
+        {getFormFields().map(field => (
+          <input
+            key={field}
+            type={field === 'contraseña' ? 'password' : 'text'}
+            placeholder={field}
+            value={formData[field] || ''}
+            onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+            style={styles.input}
+          />
+        ))}
+        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+          <button onClick={handleCreate} style={styles.saveBtn}>Guardar</button>
+          <button onClick={() => { setShowModal(false); setFormData({}); }} style={styles.cancelBtn}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div style={styles.container}>
       <header style={styles.header}>
         <h1>Taller App</h1>
+        <span style={{marginRight: '15px'}}>Rol: {user?.rol || 'cliente'}</span>
         <button onClick={logout} style={styles.logoutBtn}>Cerrar Sesión</button>
       </header>
 
@@ -52,30 +214,13 @@ const Dashboard = () => {
       </nav>
 
       <main style={styles.main}>
-        <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
+        <h2>{activeTab === 'dashboard' ? 'Panel' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
         {loading ? <p>Cargando...</p> : (
-          Array.isArray(data[activeTab]) && data[activeTab].length > 0 ? (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  {Object.keys(data[activeTab][0]).map(key => (
-                    <th key={key} style={styles.th}>{key}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {data[activeTab].map((item, i) => (
-                  <tr key={i}>
-                    {Object.values(item).map((val, j) => (
-                      <td key={j} style={styles.td}>{String(val)}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : <p>No hay datos</p>
+          activeTab === 'dashboard' ? renderDashboard() : renderTable(activeTab)
         )}
       </main>
+
+      {showModal && renderModal()}
     </div>
   );
 };
@@ -84,13 +229,23 @@ const styles = {
   container: { minHeight: '100vh', background: '#f5f5f5' },
   header: { background: '#333', color: 'white', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   logoutBtn: { padding: '8px 16px', background: '#dc3545', color: 'white', border: 'none', cursor: 'pointer' },
-  nav: { background: '#444', padding: '10px', display: 'flex', gap: '10px' },
-  tab: { padding: '10px 20px', background: 'transparent', color: 'white', border: 'none', cursor: 'pointer', textTransform: 'capitalize' },
-  activeTab: { background: '#007bff' },
+  nav: { background: '#444', padding: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' },
+  tab: { padding: '10px 15px', background: 'transparent', color: 'white', border: 'none', cursor: 'pointer', textTransform: 'capitalize' },
+  activeTab: { background: '#007bff', borderRadius: '5px' },
   main: { padding: '20px' },
-  table: { width: '100%', borderCollapse: 'collapse', background: 'white' },
+  table: { width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '15px' },
   th: { background: '#333', color: 'white', padding: '10px', textAlign: 'left' },
-  td: { padding: '10px', borderBottom: '1px solid #ddd' }
+  td: { padding: '10px', borderBottom: '1px solid #ddd' },
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' },
+  statCard: { background: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' },
+  statNumber: { fontSize: '36px', fontWeight: 'bold', color: '#007bff', margin: '10px 0 0 0' },
+  addBtn: { padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '5px' },
+  deleteBtn: { padding: '5px 10px', background: '#dc3545', color: 'white', border: 'none', cursor: 'pointer' },
+  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center' },
+  modal: { background: 'white', padding: '20px', borderRadius: '10px', width: '400px' },
+  input: { width: '100%', padding: '10px', marginBottom: '10px', boxSizing: 'border-box' },
+  saveBtn: { padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', cursor: 'pointer' },
+  cancelBtn: { padding: '10px 20px', background: '#6c757d', color: 'white', border: 'none', cursor: 'pointer' }
 };
 
 export default Dashboard;

@@ -15,7 +15,7 @@ const Login = () => {
     try {
       const data = await api.auth.login({ email, contraseña: password });
       if (data.token) {
-        login({ email: data.token }, data.token);
+        login({ id: data.id, email: data.email, rol: data.rol }, data.token);
         navigate('/dashboard');
       } else {
         setError(data.msg || 'Error al iniciar sesión');

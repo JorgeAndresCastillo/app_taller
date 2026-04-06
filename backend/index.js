@@ -1,12 +1,14 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const port = 3000;
 
-// Para leer JSON desde requests
+app.use(cors());
 app.use(express.json());
 
 // Conectar rutas de auth
 const authRouter = require('./routes/auth');
+const usuariosRouter = require('./routes/usuarios');
 const cochesRouter = require('./routes/coches');
 const citasRouter = require('./routes/citas');
 const trabajosRouter = require('./routes/trabajos');
@@ -16,6 +18,7 @@ const facturasRouter = require('./routes/facturas');
 const anomaliasRouter = require('./routes/anomalias');
 const notificacionesRouter = require('./routes/notificaciones');
 app.use('/auth', authRouter);
+app.use('/usuarios', usuariosRouter);
 app.use('/coches', cochesRouter);
 app.use('/citas', citasRouter);
 app.use('/trabajos', trabajosRouter);
