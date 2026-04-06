@@ -1,0 +1,269 @@
+# 🚗 🧠 VISIÓN GENERAL DE LA APP
+
+Una **plataforma completa para gestión de talleres mecánicos**, con:
+
+* Gestión interna del taller
+* Portal para clientes
+* Automatización de procesos
+* Escalable a IA (cámaras en el futuro)
+
+Construida con:
+
+* Node.js (backend)
+* React (web)
+* React Native (móvil)
+* PostgreSQL (base de datos)
+
+---
+
+# 👥 USUARIOS (ROLES)
+
+## 👨‍💼 ADMIN (taller)
+
+* Control total del sistema
+
+## 🔧 MECÁNICO
+
+* Gestión de trabajos
+
+## 👤 CLIENTE
+
+* Acceso a su información y servicios
+
+---
+
+# 🧩 MÓDULOS PRINCIPALES
+
+## 👤 1. Usuarios / Autenticación
+
+* Registro / login
+* Roles (admin, mecánico, cliente)
+* Seguridad con JWT
+
+---
+
+## 🚗 2. Coches
+
+* Registro de vehículos
+* Relación con clientes
+* Datos: matrícula, modelo, etc
+
+---
+
+## 👥 3. Clientes
+
+* Datos personales
+* Historial completo
+* Relación con coches
+
+---
+
+## 📅 4. Citas
+
+* Crear citas
+* Asignar mecánico
+* Estados (pendiente, en proceso, terminado)
+
+---
+
+## 🔧 5. Trabajos / Reparaciones
+
+* Qué se hizo al coche
+* Precio
+* Mecánico responsable
+
+---
+
+## 📚 6. Historial del coche (MUY IMPORTANTE)
+
+* Todas las reparaciones
+* Kilometraje
+* Fechas
+* Próximos mantenimientos
+
+---
+
+## 📦 7. Inventario
+
+* Piezas disponibles
+* Stock
+* Precios
+
+---
+
+## 💰 8. Facturación
+
+* Generación de facturas
+* Control de ingresos
+* Relación con trabajos
+
+---
+
+## ⚠️ 9. Anomalías (cliente → taller)
+
+* Cliente reporta problemas
+* El taller los gestiona
+* Se pueden convertir en citas
+
+---
+
+## 🔔 10. Notificaciones automáticas
+
+* Recordatorios de mantenimiento
+* Avisos por:
+
+  * Email (Nodemailer)
+  * WhatsApp (Twilio)
+
+---
+
+# 📱 EXPERIENCIA POR USUARIO
+
+## 👤 CLIENTE
+
+* Ver sus coches
+* Ver historial
+* Pedir citas
+* Reportar anomalías
+* Recibir recordatorios
+
+---
+
+## 🔧 MECÁNICO
+
+* Ver citas asignadas
+* Cambiar estado
+* Añadir trabajos
+* Registrar mantenimientos
+
+---
+
+## 👨‍💼 ADMIN
+
+* Gestión completa
+* Inventario
+* Facturación
+* Control total del sistema
+
+---
+
+# 🔄 FLUJO PRINCIPAL DEL SISTEMA
+
+1. Cliente se registra
+2. Añade coche
+3. Pide cita
+4. Admin asigna mecánico
+5. Mecánico realiza trabajo
+6. Se guarda historial
+7. Se genera factura
+8. Sistema programa recordatorio
+9. Cliente recibe notificación
+
+👉 Esto es el corazón de tu app.
+
+---
+
+# 🤖 FUTURO (ESCALADO CON IA)
+
+## 📷 Cámaras + análisis
+
+Con:
+
+* Python
+* OpenCV
+
+Permitirá:
+
+* Reconocer coches (matrículas)
+* Identificar mecánicos
+* Medir productividad
+* Automatizar registros
+
+---
+
+# 💡 DIFERENCIAL DE TU APP
+
+Lo que la hace potente:
+
+✅ Todo en una sola plataforma
+✅ Portal para clientes (no todos lo tienen)
+✅ Historial completo del coche
+✅ Recordatorios automáticos
+✅ Escalable a IA
+✅ Posible SaaS (vender a talleres)
+
+---
+
+# ⚠️ COSAS IMPORTANTES (para no fallar)
+
+* Seguridad (roles bien controlados)
+* Base de datos bien diseñada
+* Empezar simple → luego escalar
+* No meter IA desde el inicio
+
+---
+
+# 🚀 CONCLUSIÓN
+
+👉 No estás haciendo una app simple
+👉 Estás construyendo un **sistema profesional de gestión de talleres**
+
+Y lo mejor:
+Está perfectamente planteado para crecer.
+
+---
+
+# 👉 Siguiente paso
+
+Si todo esto te cuadra:
+
+👉 **“empezamos por autenticación”**
+
+y construimos la base real del sistema (backend + frontend funcionando) 💪
+
+
+
+
+taller-app/
+├── backend/
+│   ├── index.js               # Archivo principal de Express
+│   ├── db/
+│   │   └── index.js           # Conexión con PostgreSQL
+│   ├── routes/
+│   │   ├── auth.js            # Registro y login
+│   │   ├── usuarios.js        # CRUD de usuarios (solo admin)
+│   │   ├── coches.js          # CRUD de coches
+│   │   ├── citas.js           # Gestión de citas
+│   │   ├── historial.js       # Historial de trabajos
+│   │   └── compras.js         # Módulo de compras/facturas
+│   ├── middleware/
+│   │   └── auth.js            # JWT + validación de roles
+│   ├── models/                # Opcional: si quieres separar queries SQL
+│   └── utils/                 # Funciones auxiliares (hash, parse, etc)
+│
+├── frontend/
+│   ├── public/
+│   │   └── index.html
+│   ├── src/
+│   │   ├── App.js             # Archivo principal de React
+│   │   ├── index.js           # Renderizado de React
+│   │   ├── api/               # Funciones que llaman al backend
+│   │   │   ├── auth.js
+│   │   │   └── usuarios.js
+│   │   ├── components/        # Componentes reutilizables
+│   │   │   ├── Header.js
+│   │   │   ├── Footer.js
+│   │   │   └── PrivateRoute.js
+│   │   ├── pages/             # Vistas completas
+│   │   │   ├── Login.js
+│   │   │   ├── Register.js
+│   │   │   ├── Dashboard.js
+│   │   │   ├── Usuarios.js
+│   │   │   ├── Coches.js
+│   │   │   └── Compras.js
+│   │   └── context/           # Contexto de React (usuario logueado)
+│   │       └── AuthContext.js
+│   └── package.json
+│
+├── package.json               # Para el proyecto completo
+└── README.md
