@@ -126,6 +126,7 @@ Construida con:
 * Pedir citas
 * Reportar anomalías
 * Recibir recordatorios
+* en la interfaz grafica (poder visualizar su coche en un modelo 3D )
 
 ---
 
