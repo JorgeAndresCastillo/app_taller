@@ -29,8 +29,8 @@ router.get("/", authenticate, async (req, res) => {
 router.post("/", authenticate, async (req, res) => {
   try {
     if (req.user.rol !== "admin") return res.status(403).json({ msg: "Solo admin" });
-    const { nombre, dni, email, contraseña, movil, rol } = req.body;
-    if (!nombre || !dni || !email || !contraseña || !movil) {
+    const { nombre, dni, email, contrasena, movil, rol } = req.body;
+    if (!nombre || !dni || !email || !contrasena || !movil) {
       return res.status(400).json({ msg: "Todos los campos son obligatorios" });
     }
     const userCheck = await pool.query(
@@ -41,9 +41,9 @@ router.post("/", authenticate, async (req, res) => {
       return res.status(400).json({ msg: "Usuario ya existe" });
     }
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(contraseña, salt);
+    const hashedPassword = await bcrypt.hash(contrasena, salt);
     const result = await pool.query(
-      "INSERT INTO usuarios (nombre, dni, email, contraseña, movil, rol) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, nombre, dni, email, movil, rol, creado_en",
+      "INSERT INTO usuarios (nombre, dni, email, contrasena, movil, rol) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, nombre, dni, email, movil, rol, creado_en",
       [nombre, dni, email, hashedPassword, movil, rol || "cliente"]
     );
     res.status(201).json(result.rows[0]);

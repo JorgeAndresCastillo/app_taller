@@ -7,10 +7,10 @@ const pool = require("../db"); // Conexión a PostgreSQL
 // POST /auth/register
 router.post("/register", async (req, res) => {
   try {
-    const { nombre, dni, email, contraseña, movil } = req.body;
+    const { nombre, dni, email, contrasena, movil } = req.body;
 
     // Validación básica
-    if (!nombre || !dni || !email || !contraseña || !movil) {
+    if (!nombre || !dni || !email || !contrasena || !movil) {
       return res.status(400).json({ msg: "Todos los campos son obligatorios" });
     }
 
@@ -26,13 +26,13 @@ router.post("/register", async (req, res) => {
         .json({ msg: "Usuario ya registrado con email, DNI o móvil" });
     }
 
-    // Encriptar contraseña
+    // Encriptar contrasena
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(contraseña, salt);
+    const hashedPassword = await bcrypt.hash(contrasena, salt);
 
     // Insertar usuario en la base de datos
     const newUser = await pool.query(
-      "INSERT INTO usuarios (nombre, dni, email, contraseña, movil) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      "INSERT INTO usuarios (nombre, dni, email, contrasena, movil) VALUES ($1, $2, $3, $4, $5) RETURNING *",
       [nombre, dni, email, hashedPassword, movil],
     );
 
@@ -48,13 +48,13 @@ router.post("/register", async (req, res) => {
 // POST /auth/login
 router.post("/login", async (req, res) => {
   try {
-    const { email, contraseña } = req.body;
+    const { email, contrasena } = req.body;
 
     // Validación básica
-    if (!email || !contraseña) {
+    if (!email || !contrasena) {
       return res
         .status(400)
-        .json({ msg: "Email y contraseña son obligatorios" });
+        .json({ msg: "Email y contrasena son obligatorios" });
     }
 
     // Buscar usuario por email
@@ -69,10 +69,10 @@ router.post("/login", async (req, res) => {
 
     const user = userQuery.rows[0];
 
-    // Comparar contraseña con la encriptada
-    const isMatch = await bcrypt.compare(contraseña, user.contraseña);
+    // Comparar contrasena con la encriptada
+    const isMatch = await bcrypt.compare(contrasena, user.contrasena);
     if (!isMatch) {
-      return res.status(400).json({ msg: "Contraseña incorrecta" });
+      return res.status(400).json({ msg: "Contrasena incorrecta" });
     }
 
     // Crear token JWT

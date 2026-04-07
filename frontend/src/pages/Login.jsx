@@ -13,7 +13,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const data = await api.auth.login({ email, contraseña: password });
+      const data = await api.auth.login({ email, contrasena: password });
       if (data.token) {
         login({ id: data.id, email: data.email, rol: data.rol }, data.token);
         navigate('/dashboard');
