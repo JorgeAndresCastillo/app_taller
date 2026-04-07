@@ -175,7 +175,7 @@ Con:
 Permitirá:
 
 * Reconocer coches (matrículas)
-* Identificar mecánicos
+* Identificar mecánicos (tag, uniforme con serial)
 * Medir productividad
 * Automatizar registros
 
