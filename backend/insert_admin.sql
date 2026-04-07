@@ -1,0 +1,1 @@
+INSERT INTO usuarios (nombre, dni, email, contrasena, movil, rol) VALUES ('Admin', '12345678A', 'admin@taller.com', '$2b$10$aUZp06oYcHHvsE2Vw.JmvewwHzczksjMRD51ZI5a7wRM2HNLaYC4O', '600111111', 'admin');

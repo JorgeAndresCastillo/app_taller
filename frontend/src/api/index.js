@@ -72,6 +72,11 @@ export const api = {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify({ estado })
+    }).then(res => res.json()),
+    update: (id, data) => fetch(`${API_URL}/citas/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
     }).then(res => res.json())
   },
 

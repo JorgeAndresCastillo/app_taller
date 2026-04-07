@@ -7,12 +7,30 @@ import Dashboard from './pages/Dashboard';
 import ClientDashboard from './pages/ClientDashboard';
 
 const PrivateRoute = ({ children }) => {
-  const { token } = useContext(AuthContext);
-  return token ? children : <Navigate to="/" />;
+  const { token, loading } = useContext(AuthContext);
+  
+  if (loading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a1a2e', color: 'white' }}>Cargando...</div>;
+  }
+  
+  if (!token) {
+    return <Navigate to="/" />;
+  }
+  
+  return children;
 };
 
 const DashboardRouter = () => {
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
+  
+  if (loading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a1a2e', color: 'white' }}>Cargando...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/" />;
+  }
+  
   if (user?.rol === 'cliente') {
     return <ClientDashboard />;
   }

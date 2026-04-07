@@ -27,39 +27,87 @@ const Login = () => {
 
   return (
     <div style={styles.container}>
-      <h2>Iniciar Sesión</h2>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={styles.input}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={styles.input}
-          required
-        />
-        <button type="submit" style={styles.button}>Entrar</button>
-      </form>
-      {error && <p style={styles.error}>{error}</p>}
-      <p onClick={() => navigate('/register')} style={styles.link}>¿No tienes cuenta? Regístrate</p>
+      <div style={styles.loginBox}>
+        <div style={styles.logo}>
+          <span style={styles.logoIcon}>🔧</span>
+          <span style={styles.logoText}>TallerPro</span>
+        </div>
+        <h2 style={styles.title}>Iniciar Sesión</h2>
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={styles.input}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={styles.input}
+            required
+          />
+          <button type="submit" style={styles.button}>Entrar</button>
+        </form>
+        {error && <p style={styles.error}>{error}</p>}
+        <p onClick={() => navigate('/register')} style={styles.link}>¿No tienes cuenta? Regístrate</p>
+      </div>
     </div>
   );
 };
 
 const styles = {
-  container: { maxWidth: '400px', margin: '50px auto', padding: '20px', textAlign: 'center' },
-  form: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  input: { padding: '10px', fontSize: '16px' },
-  button: { padding: '10px', fontSize: '16px', background: '#007bff', color: 'white', border: 'none', cursor: 'pointer' },
-  error: { color: 'red' },
-  link: { color: '#007bff', cursor: 'pointer', marginTop: '10px' }
+  container: { 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    minHeight: '100vh', 
+    background: '#1a1a2e',
+    fontFamily: "'Inter', -apple-system, sans-serif"
+  },
+  loginBox: {
+    background: '#16213e',
+    padding: '40px',
+    borderRadius: '16px',
+    width: '400px',
+    maxWidth: '90%'
+  },
+  logo: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '12px',
+    marginBottom: '30px'
+  },
+  logoIcon: { fontSize: '36px' },
+  logoText: { fontSize: '28px', fontWeight: '700', color: 'white' },
+  title: { color: 'white', marginBottom: '24px', textAlign: 'center' },
+  form: { display: 'flex', flexDirection: 'column', gap: '16px' },
+  input: { 
+    padding: '14px 16px', 
+    fontSize: '15px',
+    border: '1px solid #333',
+    borderRadius: '8px',
+    background: '#1a1a2e',
+    color: 'white',
+    outline: 'none'
+  },
+  button: { 
+    padding: '14px', 
+    fontSize: '16px', 
+    background: '#e94560', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: '600',
+    marginTop: '10px'
+  },
+  error: { color: '#ef4444', textAlign: 'center', marginTop: '10px' },
+  link: { color: '#e94560', cursor: 'pointer', marginTop: '20px', textAlign: 'center' }
 };
 
 export default Login;

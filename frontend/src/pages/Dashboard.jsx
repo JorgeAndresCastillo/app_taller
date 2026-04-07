@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { api } from '../api';
 
 const Dashboard = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, loading: userLoading } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(false);
@@ -14,15 +14,54 @@ const Dashboard = () => {
   const isAdmin = user?.rol === 'admin';
   const isMecanico = user?.rol === 'mecanico';
 
-  const tabs = isAdmin 
-    ? ['dashboard', 'usuarios', 'coches', 'citas', 'trabajos', 'inventario', 'facturas', 'historial', 'anomalias']
-    : isMecanico
-    ? ['dashboard', 'usuarios', 'coches', 'citas', 'trabajos', 'inventario', 'historial', 'anomalias']
-    : ['dashboard', 'coches', 'citas', 'trabajos', 'historial', 'anomalias'];
+  if (userLoading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a1a2e', color: 'white' }}>Cargando...</div>;
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  const menuItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'coches', label: 'Vehículos', icon: '🚗' },
+    { id: 'citas', label: 'Citas', icon: '📅' },
+    { id: 'trabajos', label: 'Trabajos', icon: '🔧' },
+    ...(isAdmin ? [{ id: 'usuarios', label: 'Usuarios', icon: '👥' }] : []),
+    ...(isAdmin || isMecanico ? [{ id: 'inventario', label: 'Inventario', icon: '📦' }] : []),
+    ...(isAdmin ? [{ id: 'facturas', label: 'Facturación', icon: '💰' }] : []),
+    { id: 'historial', label: 'Historial', icon: '📋' },
+    { id: 'anomalias', label: 'Anomalías', icon: '⚠️' },
+  ];
 
   useEffect(() => {
     if (activeTab !== 'dashboard') loadData();
+    else loadDashboardData();
   }, [activeTab]);
+
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      const [coches, citas, trabajos] = await Promise.all([
+        api.coches.list(),
+        api.citas.list(),
+        api.trabajos.list()
+      ]);
+      
+      let pendingCitas = Array.isArray(citas) ? citas.filter(c => c.estado === 'pendiente') : [];
+      
+      setData({
+        totalCoches: Array.isArray(coches) ? coches.length : 0,
+        citasPendientes: pendingCitas.length,
+        trabajosActivos: Array.isArray(trabajos) ? trabajos.filter(t => t.estado === 'en_proceso' || t.estado === 'pendiente').length : 0,
+        recentCoches: Array.isArray(coches) ? coches.slice(0, 5) : [],
+        recentCitas: pendingCitas.slice(0, 5),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    setLoading(false);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -63,7 +102,6 @@ const Dashboard = () => {
       )}));
     } catch (err) {
       alert('Error al eliminar');
-      console.error(err);
     }
   };
 
@@ -72,6 +110,9 @@ const Dashboard = () => {
     const initialData = { ...item };
     if (tab === 'trabajos' && item.matricula) {
       initialData.matricula = item.matricula;
+    }
+    if (tab === 'citas' && item.estado === 'pendiente') {
+      initialData.estado = 'aceptado';
     }
     setFormData(initialData);
     setShowModal(true);
@@ -83,13 +124,16 @@ const Dashboard = () => {
       else if (activeTab === 'coches') await api.coches.update(editingItem.id, formData);
       else if (activeTab === 'trabajos') await api.trabajos.update(editingItem.id, formData);
       else if (activeTab === 'inventario') await api.inventario.update(editingItem.id, formData);
+      else if (activeTab === 'citas') {
+        await api.citas.updateEstado(editingItem.id, formData.estado || 'aceptado');
+      }
       setShowModal(false);
       setEditingItem(null);
       setFormData({});
       loadData();
+      if (activeTab === 'dashboard') loadDashboardData();
     } catch (err) {
-      alert('Error al actualizar');
-      console.error(err);
+      alert('Error al actualizar: ' + (err.message || 'Error desconocido'));
     }
   };
 
@@ -106,7 +150,6 @@ const Dashboard = () => {
       loadData();
     } catch (err) {
       alert('Error al guardar');
-      console.error(err);
     }
   };
 
@@ -114,50 +157,15 @@ const Dashboard = () => {
     const columnsMap = {
       usuarios: ['id', 'nombre', 'dni', 'email', 'movil', 'rol'],
       coches: ['matricula', 'marca', 'modelo', 'anio', 'kilometraje', 'cliente_nombre'],
-      citas: ['id', 'fecha', 'hora', 'estado', 'descripcion', 'matricula', 'cliente_nombre'],
+      citas: ['id', 'fecha', 'hora', 'estado', 'descripcion', 'matricula', 'cliente_nombre', 'mecanico_nombre'],
       trabajos: ['id', 'descripcion', 'precio', 'estado', 'matricula', 'mecanico_nombre'],
       inventario: ['id', 'nombre', 'categoria', 'stock', 'precio_venta'],
-      facturas: ['id', 'fecha', 'total', 'estado'],
+      facturas: ['id', 'fecha', 'importe', 'estado'],
       historial: ['id', 'tipo', 'descripcion', 'fecha', 'precio'],
       anomalias: ['id', 'descripcion', 'estado', 'prioridad', 'matricula']
     };
     return columnsMap[tab] || [];
   };
-
-  const renderDashboard = () => (
-    <div style={styles.statsGrid}>
-      <div style={styles.statCard}>
-        <h3>Coches</h3>
-        <p style={styles.statNumber}>{data.coches?.length || 0}</p>
-      </div>
-      <div style={styles.statCard}>
-        <h3>Citas</h3>
-        <p style={styles.statNumber}>{data.citas?.length || 0}</p>
-      </div>
-      <div style={styles.statCard}>
-        <h3>Trabajos</h3>
-        <p style={styles.statNumber}>{data.trabajos?.length || 0}</p>
-      </div>
-      {(isAdmin || isMecanico) && (
-        <>
-          <div style={styles.statCard}>
-            <h3>Usuarios</h3>
-            <p style={styles.statNumber}>{data.usuarios?.length || 0}</p>
-          </div>
-          <div style={styles.statCard}>
-            <h3>Inventario</h3>
-            <p style={styles.statNumber}>{data.inventario?.length || 0}</p>
-          </div>
-        </>
-      )}
-      {isAdmin && (
-        <div style={styles.statCard}>
-          <h3>Facturas</h3>
-          <p style={styles.statNumber}>{data.facturas?.length || 0}</p>
-        </div>
-      )}
-    </div>
-  );
 
   const getFormFields = () => {
     const fields = {
@@ -176,101 +184,223 @@ const Dashboard = () => {
     return item.id;
   };
 
+  const getEstadoStyle = (estado) => {
+    const styles = {
+      pendiente: { bg: '#f59e0b', text: 'Pendiente' },
+      aceptado: { bg: '#10b981', text: 'Aceptado' },
+      rechazado: { bg: '#ef4444', text: 'Rechazado' },
+      en_proceso: { bg: '#3b82f6', text: 'En Proceso' },
+      completada: { bg: '#6366f1', text: 'Completada' },
+      cancelada: { bg: '#64748b', text: 'Cancelada' }
+    };
+    return styles[estado] || { bg: '#64748b', text: estado };
+  };
+
+  const renderDashboard = () => (
+    <div>
+      <h2 style={styles.pageTitle}>Panel de Control</h2>
+      
+      <div style={styles.statsRow}>
+        <div style={styles.statCard}>
+          <span style={styles.statIcon}>🚗</span>
+          <div style={styles.statInfo}>
+            <span style={styles.statValue}>{data.totalCoches || 0}</span>
+            <span style={styles.statLabel}>Total Vehículos</span>
+          </div>
+        </div>
+        <div style={styles.statCard}>
+          <span style={styles.statIcon}>📅</span>
+          <div style={styles.statInfo}>
+            <span style={styles.statValue}>{data.citasPendientes || 0}</span>
+            <span style={styles.statLabel}>Citas Pendientes</span>
+          </div>
+        </div>
+        <div style={styles.statCard}>
+          <span style={styles.statIcon}>🔧</span>
+          <div style={styles.statInfo}>
+            <span style={styles.statValue}>{data.trabajosActivos || 0}</span>
+            <span style={styles.statLabel}>Trabajos Activos</span>
+          </div>
+        </div>
+      </div>
+
+      <div style={styles.tableContainer}>
+        <div style={styles.tableHeader}>
+          <h3 style={styles.tableTitle}>Citas Pendientes de Aprobación</h3>
+        </div>
+        {data.recentCitas && data.recentCitas.length > 0 ? (
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>VEHÍCULO</th>
+                <th style={styles.th}>FECHA</th>
+                <th style={styles.th}>HORA</th>
+                <th style={styles.th}>DESCRIPCIÓN</th>
+                <th style={styles.th}>ACCIONES</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.recentCitas.map(cita => (
+                <tr key={cita.id} style={styles.tr}>
+                  <td style={styles.td}><span style={styles.matriculaSmall}>{cita.matricula}</span></td>
+                  <td style={styles.td}>{cita.fecha}</td>
+                  <td style={styles.td}>{cita.hora}</td>
+                  <td style={styles.td}>{cita.descripcion || '-'}</td>
+                  <td style={styles.td}>
+                    <button onClick={() => handleEdit(cita, 'citas')} style={styles.acceptBtn}>✓ Aprobar</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div style={styles.emptyState}>No hay citas pendientes</div>
+        )}
+      </div>
+    </div>
+  );
+
   const renderTable = (tab) => {
     const columns = getColumns(tab);
     const items = data[tab] || [];
     const canDelete = (isAdmin || isMecanico) && ['usuarios', 'coches', 'citas', 'trabajos', 'inventario', 'anomalias'].includes(tab);
     const canCreate = (isAdmin || isMecanico || tab === 'coches' || tab === 'citas') && getFormFields().length > 0;
-    const canEdit = (isAdmin || isMecanico) && ['usuarios', 'coches', 'trabajos', 'inventario'].includes(tab);
+    const canEdit = (isAdmin || isMecanico) && ['usuarios', 'coches', 'trabajos', 'inventario', 'citas'].includes(tab);
     
+    const getLabel = (t) => {
+      const labels = { usuarios: 'Usuario', coches: 'Vehículo', citas: 'Cita', trabajos: 'Trabajo', inventario: 'Producto', anomalias: 'Anomalía' };
+      return labels[t] || t;
+    };
+
     return (
-      <>
-        {canCreate && (
-          <button onClick={() => { setShowModal(true); setEditingItem(null); setFormData({}); }} style={styles.addBtn}>
-            + Agregar {tab}
-          </button>
-        )}
-        {items.length === 0 ? (
-          <p style={{marginTop: '20px'}}>No hay datos</p>
-        ) : (
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              {columns.map(col => <th key={col} style={styles.th}>{col}</th>)}
-              {(canEdit || canDelete) && <th style={styles.th}>Acciones</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, i) => (
-              <tr key={i}>
-                {columns.map(col => <td key={col} style={styles.td}>{String(item[col] || '')}</td>)}
-                {(canEdit || canDelete) && (
-                  <td style={styles.td}>
-                    {canEdit && (
-                      <button onClick={() => handleEdit(item, tab)} style={styles.editBtn}>Editar</button>
-                    )}
-                    {canDelete && (
-                      <button onClick={() => handleDelete(getDeleteId(item, tab), tab)} style={styles.deleteBtn}>X</button>
-                    )}
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        )}
-      </>
+      <div>
+        <div style={styles.tableHeader}>
+          <h2 style={styles.pageTitle}>{getLabel(tab)}s</h2>
+          {canCreate && (
+            <button onClick={() => { setShowModal(true); setEditingItem(null); setFormData({}); }} style={styles.addBtn}>
+              + Agregar {getLabel(tab)}
+            </button>
+          )}
+        </div>
+        
+        <div style={styles.tableContainer}>
+          {items.length === 0 ? (
+            <div style={styles.emptyState}>
+              <span style={styles.emptyIcon}>📭</span>
+              <p>No hay {getLabel(tab)}s registrados</p>
+            </div>
+          ) : (
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  {columns.map(col => (
+                    <th key={col} style={styles.th}>{col.replace('_', ' ').toUpperCase()}</th>
+                  ))}
+                  {(canEdit || canDelete) && <th style={styles.th}>ACCIONES</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, i) => {
+                  const estadoStyle = getEstadoStyle(item.estado);
+                  return (
+                    <tr key={i} style={styles.tr}>
+                      {columns.map(col => (
+                        <td key={col} style={styles.td}>
+                          {col === 'matricula' ? (
+                            <span style={styles.matriculaSmall}>{item[col]}</span>
+                          ) : col === 'estado' ? (
+                            <span style={{...styles.statusBadge, background: estadoStyle.bg}}>{estadoStyle.text}</span>
+                          ) : String(item[col] || '-')}
+                        </td>
+                      ))}
+                      {(canEdit || canDelete) && (
+                        <td style={styles.td}>
+                          {canEdit && (
+                            <button onClick={() => handleEdit(item, tab)} style={styles.editBtn}>Editar</button>
+                          )}
+                          {canDelete && (
+                            <button onClick={() => handleDelete(getDeleteId(item, tab), tab)} style={styles.deleteBtn}>✕</button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     );
   };
 
   const renderModal = () => (
     <div style={styles.modalOverlay}>
       <div style={styles.modal}>
-        <h3>{editingItem ? 'Editar' : 'Agregar'} {activeTab}</h3>
-        {getFormFields().map(field => {
-          if (field === 'rol') {
-            return (
-              <select
-                key={field}
-                value={formData[field] || 'cliente'}
-                onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-                style={styles.input}
-              >
-                <option value="cliente">Cliente</option>
-                <option value="mecanico">Mecanico</option>
-              </select>
-            );
-          }
-          if (field === 'estado') {
-            return (
-              <select
-                key={field}
-                value={formData[field] || 'pendiente'}
-                onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-                style={styles.input}
-              >
-                <option value="pendiente">Pendiente</option>
-                <option value="en_proceso">En Proceso</option>
-                <option value="completado">Completado</option>
-              </select>
-            );
-          }
-          return (
-            <input
-              key={field}
-              type={field === 'contrasena' ? 'password' : 'text'}
-              placeholder={field === 'contrasena' ? 'contraseña' : field}
-              value={formData[field] || ''}
-              onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+        <h3 style={styles.modalTitle}>{editingItem ? 'Editar' : 'Agregar'} {activeTab}</h3>
+        {activeTab === 'citas' && editingItem && editingItem.estado === 'pendiente' ? (
+          <>
+            <p style={styles.modalDesc}>Esta cita está pendiente. ¿Desea aceptarla o rechazarla?</p>
+            <select
+              value={formData.estado || 'aceptado'}
+              onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
               style={styles.input}
-            />
-          );
-        })}
-        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            >
+              <option value="aceptado">Aceptado</option>
+              <option value="rechazado">Rechazado</option>
+              <option value="en_proceso">En Proceso</option>
+            </select>
+          </>
+        ) : (
+          getFormFields().map(field => {
+            if (field === 'rol') {
+              return (
+                <select
+                  key={field}
+                  value={formData[field] || 'cliente'}
+                  onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+                  style={styles.input}
+                >
+                  <option value="cliente">Cliente</option>
+                  <option value="mecanico">Mecánico</option>
+                </select>
+              );
+            }
+            if (field === 'estado') {
+              return (
+                <select
+                  key={field}
+                  value={formData[field] || 'pendiente'}
+                  onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+                  style={styles.input}
+                >
+                  <option value="pendiente">Pendiente</option>
+                  <option value="aceptado">Aceptado</option>
+                  <option value="en_proceso">En Proceso</option>
+                  <option value="completada">Completada</option>
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              );
+            }
+            return (
+              <input
+                key={field}
+                type={field === 'contrasena' ? 'password' : 'text'}
+                placeholder={field === 'contrasena' ? 'contraseña' : field}
+                value={formData[field] || ''}
+                onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+                style={styles.input}
+              />
+            );
+          })
+        )}
+        <div style={styles.modalActions}>
           <button onClick={editingItem ? handleUpdate : handleCreate} style={styles.saveBtn}>
             {editingItem ? 'Actualizar' : 'Guardar'}
           </button>
-          <button onClick={() => { setShowModal(false); setEditingItem(null); setFormData({}); }} style={styles.cancelBtn}>Cancelar</button>
+          <button onClick={() => { setShowModal(false); setEditingItem(null); setFormData({}); }} style={styles.cancelBtn}>
+            Cancelar
+          </button>
         </div>
       </div>
     </div>
@@ -278,29 +408,51 @@ const Dashboard = () => {
 
   return (
     <div style={styles.container}>
-      <header style={styles.header}>
-        <h1>Taller App</h1>
-        <span style={{marginRight: '15px'}}>Rol: {user?.rol || 'cliente'}</span>
-        <button onClick={logout} style={styles.logoutBtn}>Cerrar Sesión</button>
-      </header>
+      <aside style={styles.sidebar}>
+        <div style={styles.logo}>
+          <span style={styles.logoIcon}>🔧</span>
+          <span style={styles.logoText}>TallerPro</span>
+        </div>
+        
+        <nav style={styles.nav}>
+          {menuItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              style={{
+                ...styles.navItem,
+                ...(activeTab === item.id ? styles.navItemActive : {})
+              }}
+            >
+              <span style={styles.navIcon}>{item.icon}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
 
-      <nav style={styles.nav}>
-        {tabs.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{ ...styles.tab, ...(activeTab === tab ? styles.activeTab : {}) }}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </nav>
+        <div style={styles.sidebarFooter}>
+          <button onClick={logout} style={styles.logoutBtn}>Cerrar Sesión</button>
+        </div>
+      </aside>
 
       <main style={styles.main}>
-        <h2>{activeTab === 'dashboard' ? 'Panel' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
-        {loading ? <p>Cargando...</p> : (
-          activeTab === 'dashboard' ? renderDashboard() : renderTable(activeTab)
-        )}
+        <header style={styles.header}>
+          <div style={styles.headerLeft}>
+            <span style={styles.headerIcon}>🔧</span>
+            <span style={styles.headerTitle}>TallerPro</span>
+          </div>
+          <div style={styles.headerRight}>
+            <span style={styles.userRole}>{user?.rol?.toUpperCase()}</span>
+          </div>
+        </header>
+
+        <div style={styles.content}>
+          {loading ? (
+            <div style={styles.loading}>Cargando...</div>
+          ) : (
+            activeTab === 'dashboard' ? renderDashboard() : renderTable(activeTab)
+          )}
+        </div>
       </main>
 
       {showModal && renderModal()}
@@ -309,27 +461,56 @@ const Dashboard = () => {
 };
 
 const styles = {
-  container: { minHeight: '100vh', background: '#f5f5f5' },
-  header: { background: '#333', color: 'white', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  logoutBtn: { padding: '8px 16px', background: '#dc3545', color: 'white', border: 'none', cursor: 'pointer' },
-  nav: { background: '#444', padding: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' },
-  tab: { padding: '10px 15px', background: 'transparent', color: 'white', border: 'none', cursor: 'pointer', textTransform: 'capitalize' },
-  activeTab: { background: '#007bff', borderRadius: '5px' },
-  main: { padding: '20px' },
-  table: { width: '100%', borderCollapse: 'collapse', background: 'white', marginTop: '15px' },
-  th: { background: '#333', color: 'white', padding: '10px', textAlign: 'left' },
-  td: { padding: '10px', borderBottom: '1px solid #ddd' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' },
-  statCard: { background: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' },
-  statNumber: { fontSize: '36px', fontWeight: 'bold', color: '#007bff', margin: '10px 0 0 0' },
-  addBtn: { padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '5px' },
-  editBtn: { padding: '5px 10px', background: '#007bff', color: 'white', border: 'none', cursor: 'pointer', marginRight: '5px' },
-  deleteBtn: { padding: '5px 10px', background: '#dc3545', color: 'white', border: 'none', cursor: 'pointer' },
-  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center' },
-  modal: { background: 'white', padding: '20px', borderRadius: '10px', width: '400px' },
-  input: { width: '100%', padding: '10px', marginBottom: '10px', boxSizing: 'border-box' },
-  saveBtn: { padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', cursor: 'pointer' },
-  cancelBtn: { padding: '10px 20px', background: '#6c757d', color: 'white', border: 'none', cursor: 'pointer' }
+  container: { display: 'flex', minHeight: '100vh', background: '#1a1a2e', fontFamily: "'Inter', -apple-system, sans-serif" },
+  sidebar: { width: '260px', background: '#16213e', color: 'white', display: 'flex', flexDirection: 'column' },
+  logo: { display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' },
+  logoIcon: { fontSize: '28px' },
+  logoText: { fontSize: '22px', fontWeight: '700' },
+  nav: { flex: 1, padding: '20px 0' },
+  navItem: { display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '14px 20px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '15px', textAlign: 'left', transition: 'all 0.2s' },
+  navItemActive: { background: '#e94560', color: 'white' },
+  navIcon: { fontSize: '18px' },
+  sidebarFooter: { padding: '20px', borderTop: '1px solid rgba(255,255,255,0.1)' },
+  logoutBtn: { width: '100%', padding: '12px', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#94a3b8', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
+  main: { flex: 1, display: 'flex', flexDirection: 'column' },
+  header: { background: '#16213e', padding: '20px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' },
+  headerLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
+  headerIcon: { fontSize: '24px' },
+  headerTitle: { fontSize: '20px', fontWeight: '700', color: 'white' },
+  headerRight: { display: 'flex', alignItems: 'center', gap: '15px' },
+  userRole: { background: '#e94560', color: 'white', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' },
+  content: { padding: '30px', flex: 1, overflow: 'auto' },
+  loading: { textAlign: 'center', padding: '50px', color: '#666' },
+  pageTitle: { fontSize: '24px', fontWeight: '700', color: 'white', marginBottom: '24px' },
+  statsRow: { display: 'flex', gap: '20px', marginBottom: '30px', flexWrap: 'wrap' },
+  statCard: { flex: 1, minWidth: '200px', background: '#16213e', borderRadius: '12px', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '16px' },
+  statIcon: { fontSize: '32px' },
+  statInfo: { display: 'flex', flexDirection: 'column' },
+  statValue: { fontSize: '28px', fontWeight: '700', color: 'white' },
+  statLabel: { fontSize: '13px', color: '#888', marginTop: '2px' },
+  tableContainer: { background: '#16213e', borderRadius: '12px', overflow: 'hidden' },
+  tableHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
+  tableTitle: { fontSize: '18px', fontWeight: '600', color: '#e94560' },
+  table: { width: '100%', borderCollapse: 'collapse' },
+  th: { background: '#0f3460', color: '#e94560', padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  td: { padding: '14px 16px', borderBottom: '1px solid #1a1a2e', fontSize: '14px', color: '#ccc' },
+  tr: { transition: 'background 0.2s' },
+  matriculaSmall: { background: '#0ab1e6', color: '#000', padding: '4px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '13px', fontFamily: 'Arial', border: '1px solid #fff' },
+  statusBadge: { padding: '4px 10px', borderRadius: '12px', color: 'white', fontSize: '12px', fontWeight: '500', textTransform: 'capitalize' },
+  emptyState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px', color: '#666' },
+  emptyIcon: { fontSize: '48px', marginBottom: '16px' },
+  addBtn: { padding: '12px 20px', background: '#e94560', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' },
+  acceptBtn: { padding: '6px 14px', background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' },
+  editBtn: { padding: '6px 14px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', marginRight: '8px', fontSize: '13px', fontWeight: '500' },
+  deleteBtn: { padding: '6px 12px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' },
+  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
+  modal: { background: '#16213e', padding: '30px', borderRadius: '16px', width: '450px' },
+  modalTitle: { fontSize: '20px', fontWeight: '600', color: 'white', marginBottom: '20px' },
+  modalDesc: { color: '#888', marginBottom: '16px', fontSize: '14px' },
+  input: { width: '100%', padding: '12px 16px', marginBottom: '12px', border: '1px solid #333', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', background: '#1a1a2e', color: 'white' },
+  modalActions: { display: 'flex', gap: '12px', marginTop: '20px' },
+  saveBtn: { flex: 1, padding: '12px', background: '#e94560', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' },
+  cancelBtn: { flex: 1, padding: '12px', background: '#333', color: '#ccc', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }
 };
 
 export default Dashboard;
