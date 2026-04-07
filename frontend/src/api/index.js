@@ -55,6 +55,11 @@ export const api = {
       headers: getHeaders(),
       body: JSON.stringify(data)
     }).then(res => res.json()),
+    updateEstado: (matricula, estado) => fetch(`${API_URL}/coches/${matricula}/estado`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ estado })
+    }).then(res => res.json()),
     delete: (id) => fetch(`${API_URL}/coches/${id}`, {
       method: 'DELETE',
       headers: getHeaders()
@@ -77,6 +82,10 @@ export const api = {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(data)
+    }).then(res => res.json()),
+    delete: (id) => fetch(`${API_URL}/citas/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders()
     }).then(res => res.json())
   },
 
@@ -113,6 +122,10 @@ export const api = {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify({ estado })
+    }).then(res => res.json()),
+    delete: (id) => fetch(`${API_URL}/anomalias/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders()
     }).then(res => res.json())
   },
 

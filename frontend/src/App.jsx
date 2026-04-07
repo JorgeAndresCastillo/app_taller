@@ -6,35 +6,42 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import ClientDashboard from './pages/ClientDashboard';
 
-const PrivateRoute = ({ children }) => {
-  const { token, loading } = useContext(AuthContext);
+const AdminDashboard = () => {
+  const { user } = useContext(AuthContext);
   
-  if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a1a2e', color: 'white' }}>Cargando...</div>;
+  if (!user) {
+    return <Navigate to="/" replace />;
   }
   
-  if (!token) {
-    return <Navigate to="/" />;
+  if (user.rol === 'cliente') {
+    return <Navigate to="/cliente" replace />;
+  }
+  
+  return <Dashboard />;
+};
+
+const ClienteDashboard = () => {
+  const { user } = useContext(AuthContext);
+  
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+  
+  if (user.rol !== 'cliente') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <ClientDashboard />;
+};
+
+const ProtectedRoute = ({ children }) => {
+  const { user, token } = useContext(AuthContext);
+  
+  if (!token || !user) {
+    return <Navigate to="/" replace />;
   }
   
   return children;
-};
-
-const DashboardRouter = () => {
-  const { user, loading } = useContext(AuthContext);
-  
-  if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a1a2e', color: 'white' }}>Cargando...</div>;
-  }
-  
-  if (!user) {
-    return <Navigate to="/" />;
-  }
-  
-  if (user?.rol === 'cliente') {
-    return <ClientDashboard />;
-  }
-  return <Dashboard />;
 };
 
 function App() {
@@ -45,9 +52,14 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={
-            <PrivateRoute>
-              <DashboardRouter />
-            </PrivateRoute>
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/cliente" element={
+            <ProtectedRoute>
+              <ClienteDashboard />
+            </ProtectedRoute>
           } />
         </Routes>
       </BrowserRouter>

@@ -1,8 +1,9 @@
 import { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { api } from '../api';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+// import { Canvas } from '@react-three/fiber';
+// import { OrbitControls } from '@react-three/drei';
 
 function Car3DViewer({ color = "#3b82f6" }) {
   return (
@@ -73,22 +74,25 @@ const COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'
 
 const ClientDashboard = () => {
   const { user, logout, loading: userLoading } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [coches, setCoches] = useState([]);
   const [selectedCoche, setSelectedCoche] = useState(null);
   const [historial, setHistorial] = useState([]);
   const [citas, setCitas] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  if (userLoading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a1a2e', color: 'white' }}>Cargando...</div>;
-  }
-
-  if (!user) {
-    return null;
-  }
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({});
   const [activeTab, setActiveTab] = useState('garage');
+
+  useEffect(() => {
+    if (!userLoading && !user) {
+      navigate('/');
+    }
+  }, [user, userLoading, navigate]);
+
+  if (userLoading || !user) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a1a2e', color: 'white' }}>Cargando...</div>;
+  }
 
   useEffect(() => {
     loadData();
@@ -184,7 +188,7 @@ const ClientDashboard = () => {
         </nav>
 
         <div style={styles.sidebarFooter}>
-          <button onClick={logout} style={styles.logoutBtn}>Cerrar Sesión</button>
+          <button onClick={() => { logout(); navigate('/'); }} style={styles.logoutBtn}>Cerrar Sesión</button>
         </div>
       </aside>
 
@@ -242,13 +246,8 @@ const ClientDashboard = () => {
                   {selectedCoche ? (
                     <>
                       <div style={styles.viewer3d}>
-                        <Canvas shadows camera={{ position: [4, 2, 4], fov: 50 }}>
-                          <ambientLight intensity={0.6} />
-                          <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} castShadow />
-                          <Car3DViewer color={COLORS[coches.findIndex(c => c.id === selectedCoche.id) % COLORS.length]} />
-                          <OrbitControls autoRotate autoRotateSpeed={0.5} />
-                        </Canvas>
-                        <div style={styles.viewerHint}>🖱️ Arrastra para rotar • Scroll para zoom</div>
+                        <div style={styles.carPlaceholder}>🚗</div>
+                        <div style={styles.viewerHint}>Vista del vehículo</div>
                       </div>
 
                       <div style={styles.carDetails}>

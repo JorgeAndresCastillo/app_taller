@@ -1,9 +1,11 @@
 import { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { api } from '../api';
 
 const Dashboard = () => {
   const { user, logout, loading: userLoading } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(false);
@@ -14,12 +16,14 @@ const Dashboard = () => {
   const isAdmin = user?.rol === 'admin';
   const isMecanico = user?.rol === 'mecanico';
 
-  if (userLoading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a1a2e', color: 'white' }}>Cargando...</div>;
-  }
+  useEffect(() => {
+    if (!userLoading && !user) {
+      navigate('/');
+    }
+  }, [user, userLoading, navigate]);
 
-  if (!user) {
-    return null;
+  if (userLoading || !user) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a1a2e', color: 'white' }}>Cargando...</div>;
   }
 
   const menuItems = [
@@ -95,13 +99,15 @@ const Dashboard = () => {
     try {
       if (tipo === 'usuarios') await api.usuarios.delete(id);
       else if (tipo === 'coches') await api.coches.delete(id);
-      else if (tipo === 'inventario') await api.inventario.delete(id);
+      else if (tipo === 'citas') await api.citas.delete(id);
       else if (tipo === 'trabajos') await api.trabajos.delete(id);
+      else if (tipo === 'inventario') await api.inventario.delete(id);
+      else if (tipo === 'anomalias') await api.anomalias.delete(id);
       setData(prev => ({ ...prev, [tipo]: prev[tipo]?.filter(item => 
         tipo === 'coches' ? item.matricula !== id : item.id !== id
       )}));
     } catch (err) {
-      alert('Error al eliminar');
+      alert('Error al eliminar: ' + (err.message || 'Error'));
     }
   };
 
@@ -431,7 +437,7 @@ const Dashboard = () => {
         </nav>
 
         <div style={styles.sidebarFooter}>
-          <button onClick={logout} style={styles.logoutBtn}>Cerrar Sesión</button>
+          <button onClick={() => { logout(); navigate('/'); }} style={styles.logoutBtn}>Cerrar Sesión</button>
         </div>
       </aside>
 

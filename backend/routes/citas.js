@@ -88,4 +88,19 @@ router.put("/:id/estado", authenticate, async (req, res) => {
   }
 });
 
+router.delete("/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.rol !== "admin") {
+      return res.status(403).json({ msg: "Solo admin puede eliminar citas" });
+    }
+    await pool.query("DELETE FROM trabajos WHERE cita_id = $1", [req.params.id]);
+    const result = await pool.query("DELETE FROM citas WHERE id = $1 RETURNING id", [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ msg: "Cita no encontrada" });
+    res.json({ msg: "Cita eliminada" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: "Error del servidor" });
+  }
+});
+
 module.exports = router;

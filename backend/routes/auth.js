@@ -26,7 +26,7 @@ router.post("/register", async (req, res) => {
         .json({ msg: "Usuario ya registrado con email, DNI o móvil" });
     }
 
-    // Encriptar contrasena
+    // Encriptar contraseña
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(contrasena, salt);
 
@@ -69,7 +69,7 @@ router.post("/login", async (req, res) => {
 
     const user = userQuery.rows[0];
 
-    // Comparar contrasena con la encriptada
+    // Comparar contraseña con la encriptada
     const isMatch = await bcrypt.compare(contrasena, user.contrasena);
     if (!isMatch) {
       return res.status(400).json({ msg: "Contrasena incorrecta" });

@@ -18,15 +18,17 @@ router.post("/", authenticate, async (req, res) => {
   try {
     const { matricula, marca, modelo, anio, kilometraje, cliente_id } = req.body;
     if (!matricula) return res.status(400).json({ msg: "Matrícula obligatoria" });
-    let ownerId;
+    let ownerId, estado;
     if (req.user.rol === "admin") {
       ownerId = cliente_id || req.user.id;
+      estado = "aprobado";
     } else {
       ownerId = req.user.id;
+      estado = "pendiente";
     }
     const result = await pool.query(
-      "INSERT INTO coches (matricula, marca, modelo, anio, kilometraje, cliente_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-      [matricula, marca, modelo, anio, kilometraje, ownerId]
+      "INSERT INTO coches (matricula, marca, modelo, anio, kilometraje, cliente_id, estado) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+      [matricula, marca, modelo, anio, kilometraje, ownerId, estado]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -97,6 +99,24 @@ router.delete("/:matricula", authenticate, async (req, res) => {
     await pool.query("DELETE FROM anomalias WHERE coche_id = $1", [cocheId]);
     const result = await pool.query("DELETE FROM coches WHERE matricula = $1 RETURNING *", [req.params.matricula]);
     res.json({ msg: "Coche eliminado" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ msg: "Error del servidor" });
+  }
+});
+
+router.put("/:matricula/estado", authenticate, async (req, res) => {
+  try {
+    if (req.user.rol !== "admin") {
+      return res.status(403).json({ msg: "Solo admin" });
+    }
+    const { estado } = req.body;
+    const result = await pool.query(
+      "UPDATE coches SET estado = $1 WHERE matricula = $2 RETURNING *",
+      [estado, req.params.matricula]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ msg: "Coche no encontrado" });
+    res.json(result.rows[0]);
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ msg: "Error del servidor" });
