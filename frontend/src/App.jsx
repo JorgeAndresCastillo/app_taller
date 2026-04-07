@@ -4,10 +4,19 @@ import { AuthProvider, AuthContext } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import ClientDashboard from './pages/ClientDashboard';
 
 const PrivateRoute = ({ children }) => {
   const { token } = useContext(AuthContext);
   return token ? children : <Navigate to="/" />;
+};
+
+const DashboardRouter = () => {
+  const { user } = useContext(AuthContext);
+  if (user?.rol === 'cliente') {
+    return <ClientDashboard />;
+  }
+  return <Dashboard />;
 };
 
 function App() {
@@ -19,7 +28,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={
             <PrivateRoute>
-              <Dashboard />
+              <DashboardRouter />
             </PrivateRoute>
           } />
         </Routes>

@@ -10,7 +10,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const data = await api.auth.register({ ...form, contraseña: form.password });
+      const data = await api.auth.register({ ...form, contrasena: form.password });
       if (data.usuario) {
         navigate('/');
       } else {

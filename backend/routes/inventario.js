@@ -16,7 +16,7 @@ const authenticate = (req, res, next) => {
 
 router.post("/", authenticate, async (req, res) => {
   try {
-    if (req.user.rol !== "admin") return res.status(403).json({ msg: "Solo admin" });
+    if (req.user.rol !== "admin" && req.user.rol !== "mecanico") return res.status(403).json({ msg: "Solo admin o mecanico" });
     const { nombre, descripcion, categoria, stock, precio_compra, precio_venta, minimo_stock } = req.body;
     if (!nombre) return res.status(400).json({ msg: "Nombre obligatorio" });
     const result = await pool.query(
@@ -32,6 +32,9 @@ router.post("/", authenticate, async (req, res) => {
 
 router.get("/", authenticate, async (req, res) => {
   try {
+    if (req.user.rol !== "admin" && req.user.rol !== "mecanico" && req.user.rol !== "cliente") {
+      return res.status(403).json({ msg: "Acceso denegado" });
+    }
     const result = await pool.query("SELECT * FROM inventario ORDER BY nombre");
     res.json(result.rows);
   } catch (err) {
@@ -42,7 +45,7 @@ router.get("/", authenticate, async (req, res) => {
 
 router.put("/:id", authenticate, async (req, res) => {
   try {
-    if (req.user.rol !== "admin") return res.status(403).json({ msg: "Solo admin" });
+    if (req.user.rol !== "admin" && req.user.rol !== "mecanico") return res.status(403).json({ msg: "Solo admin o mecanico" });
     const { stock, precio_venta } = req.body;
     const result = await pool.query(
       "UPDATE inventario SET stock = COALESCE($1, stock), precio_venta = COALESCE($2, precio_venta) WHERE id = $3 RETURNING *",
@@ -58,7 +61,7 @@ router.put("/:id", authenticate, async (req, res) => {
 
 router.delete("/:id", authenticate, async (req, res) => {
   try {
-    if (req.user.rol !== "admin") return res.status(403).json({ msg: "Solo admin" });
+    if (req.user.rol !== "admin" && req.user.rol !== "mecanico") return res.status(403).json({ msg: "Solo admin o mecanico" });
     const result = await pool.query("DELETE FROM inventario WHERE id = $1 RETURNING id", [req.params.id]);
     if (result.rows.length === 0) return res.status(404).json({ msg: "Producto no encontrado" });
     res.json({ msg: "Producto eliminado" });
@@ -70,7 +73,7 @@ router.delete("/:id", authenticate, async (req, res) => {
 
 router.get("/alerta", authenticate, async (req, res) => {
   try {
-    if (req.user.rol !== "admin") return res.status(403).json({ msg: "Solo admin" });
+    if (req.user.rol !== "admin" && req.user.rol !== "mecanico") return res.status(403).json({ msg: "Solo admin o mecanico" });
     const result = await pool.query("SELECT * FROM inventario WHERE stock <= minimo_stock");
     res.json(result.rows);
   } catch (err) {

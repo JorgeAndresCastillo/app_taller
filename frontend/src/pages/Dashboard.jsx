@@ -8,12 +8,16 @@ const Dashboard = () => {
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({});
 
   const isAdmin = user?.rol === 'admin';
+  const isMecanico = user?.rol === 'mecanico';
 
   const tabs = isAdmin 
     ? ['dashboard', 'usuarios', 'coches', 'citas', 'trabajos', 'inventario', 'facturas', 'historial', 'anomalias']
+    : isMecanico
+    ? ['dashboard', 'usuarios', 'coches', 'citas', 'trabajos', 'inventario', 'historial', 'anomalias']
     : ['dashboard', 'coches', 'citas', 'trabajos', 'historial', 'anomalias'];
 
   useEffect(() => {
@@ -35,7 +39,11 @@ const Dashboard = () => {
       };
       if (fetchers[activeTab]) {
         const result = await fetchers[activeTab]();
-        setData(prev => ({ ...prev, [activeTab]: Array.isArray(result) ? result : [] }));
+        if (Array.isArray(result)) {
+          setData(prev => ({ ...prev, [activeTab]: result }));
+        } else if (result.msg) {
+          setData(prev => ({ ...prev, [activeTab]: [] }));
+        }
       }
     } catch (err) {
       console.error(err);
@@ -49,6 +57,7 @@ const Dashboard = () => {
       if (tipo === 'usuarios') await api.usuarios.delete(id);
       else if (tipo === 'coches') await api.coches.delete(id);
       else if (tipo === 'inventario') await api.inventario.delete(id);
+      else if (tipo === 'trabajos') await api.trabajos.delete(id);
       setData(prev => ({ ...prev, [tipo]: prev[tipo]?.filter(item => 
         tipo === 'coches' ? item.matricula !== id : item.id !== id
       )}));
@@ -58,12 +67,55 @@ const Dashboard = () => {
     }
   };
 
+  const handleEdit = (item, tab) => {
+    setEditingItem(item);
+    const initialData = { ...item };
+    if (tab === 'trabajos' && item.matricula) {
+      initialData.matricula = item.matricula;
+    }
+    setFormData(initialData);
+    setShowModal(true);
+  };
+
+  const handleUpdate = async () => {
+    try {
+      if (activeTab === 'usuarios') await api.usuarios.update(editingItem.id, formData);
+      else if (activeTab === 'coches') await api.coches.update(editingItem.id, formData);
+      else if (activeTab === 'trabajos') await api.trabajos.update(editingItem.id, formData);
+      else if (activeTab === 'inventario') await api.inventario.update(editingItem.id, formData);
+      setShowModal(false);
+      setEditingItem(null);
+      setFormData({});
+      loadData();
+    } catch (err) {
+      alert('Error al actualizar');
+      console.error(err);
+    }
+  };
+
+  const handleCreate = async () => {
+    try {
+      if (activeTab === 'usuarios') await api.usuarios.create(formData);
+      else if (activeTab === 'coches') await api.coches.create(formData);
+      else if (activeTab === 'citas') await api.citas.create(formData);
+      else if (activeTab === 'trabajos') await api.trabajos.create(formData);
+      else if (activeTab === 'inventario') await api.inventario.create(formData);
+      else if (activeTab === 'anomalias') await api.anomalias.create(formData);
+      setShowModal(false);
+      setFormData({});
+      loadData();
+    } catch (err) {
+      alert('Error al guardar');
+      console.error(err);
+    }
+  };
+
   const getColumns = (tab) => {
     const columnsMap = {
       usuarios: ['id', 'nombre', 'dni', 'email', 'movil', 'rol'],
-      coches: ['matricula', 'marca', 'modelo', 'año', 'kilometraje', 'cliente_nombre'],
-      citas: ['id', 'fecha', 'hora', 'estado', 'descripcion', 'matricula'],
-      trabajos: ['id', 'descripcion', 'precio', 'estado', 'matricula'],
+      coches: ['matricula', 'marca', 'modelo', 'anio', 'kilometraje', 'cliente_nombre'],
+      citas: ['id', 'fecha', 'hora', 'estado', 'descripcion', 'matricula', 'cliente_nombre'],
+      trabajos: ['id', 'descripcion', 'precio', 'estado', 'matricula', 'mecanico_nombre'],
       inventario: ['id', 'nombre', 'categoria', 'stock', 'precio_venta'],
       facturas: ['id', 'fecha', 'total', 'estado'],
       historial: ['id', 'tipo', 'descripcion', 'fecha', 'precio'],
@@ -86,7 +138,7 @@ const Dashboard = () => {
         <h3>Trabajos</h3>
         <p style={styles.statNumber}>{data.trabajos?.length || 0}</p>
       </div>
-      {isAdmin && (
+      {(isAdmin || isMecanico) && (
         <>
           <div style={styles.statCard}>
             <h3>Usuarios</h3>
@@ -96,40 +148,25 @@ const Dashboard = () => {
             <h3>Inventario</h3>
             <p style={styles.statNumber}>{data.inventario?.length || 0}</p>
           </div>
-          <div style={styles.statCard}>
-            <h3>Facturas</h3>
-            <p style={styles.statNumber}>{data.facturas?.length || 0}</p>
-          </div>
         </>
+      )}
+      {isAdmin && (
+        <div style={styles.statCard}>
+          <h3>Facturas</h3>
+          <p style={styles.statNumber}>{data.facturas?.length || 0}</p>
+        </div>
       )}
     </div>
   );
 
-  const handleCreate = async () => {
-    try {
-      if (activeTab === 'usuarios') await api.usuarios.create(formData);
-      else if (activeTab === 'coches') await api.coches.create(formData);
-      else if (activeTab === 'citas') await api.citas.create(formData);
-      else if (activeTab === 'trabajos') await api.trabajos.create(formData);
-      else if (activeTab === 'inventario') await api.inventario.create(formData);
-      else if (activeTab === 'anomalias') await api.anomalias.create(formData);
-      setShowModal(false);
-      setFormData({});
-      loadData();
-    } catch (err) {
-      alert('Error al guardar');
-      console.error(err);
-    }
-  };
-
   const getFormFields = () => {
     const fields = {
-      usuarios: ['nombre', 'dni', 'email', 'contraseña', 'movil', 'rol'],
-      coches: ['matricula', 'marca', 'modelo', 'año', 'kilometraje'],
-      citas: ['coche_id', 'fecha', 'hora', 'descripcion'],
-      trabajos: ['coche_id', 'descripcion', 'precio'],
+      usuarios: ['nombre', 'dni', 'email', 'contrasena', 'movil', 'rol'],
+      coches: ['matricula', 'marca', 'modelo', 'anio', 'kilometraje'],
+      citas: ['matricula', 'fecha', 'hora', 'descripcion'],
+      trabajos: ['matricula', 'descripcion', 'precio', 'estado'],
       inventario: ['nombre', 'descripcion', 'categoria', 'stock', 'precio_compra', 'precio_venta'],
-      anomalias: ['coche_id', 'descripcion', 'prioridad']
+      anomalias: ['matricula', 'descripcion', 'prioridad']
     };
     return fields[activeTab] || [];
   };
@@ -142,13 +179,14 @@ const Dashboard = () => {
   const renderTable = (tab) => {
     const columns = getColumns(tab);
     const items = data[tab] || [];
-    const canDelete = isAdmin && ['usuarios', 'coches', 'citas', 'trabajos', 'inventario', 'anomalias'].includes(tab);
-    const canCreate = isAdmin && getFormFields().length > 0;
+    const canDelete = (isAdmin || isMecanico) && ['usuarios', 'coches', 'citas', 'trabajos', 'inventario', 'anomalias'].includes(tab);
+    const canCreate = (isAdmin || isMecanico || tab === 'coches' || tab === 'citas') && getFormFields().length > 0;
+    const canEdit = (isAdmin || isMecanico) && ['usuarios', 'coches', 'trabajos', 'inventario'].includes(tab);
     
     return (
       <>
         {canCreate && (
-          <button onClick={() => { setShowModal(true); setFormData({}); }} style={styles.addBtn}>
+          <button onClick={() => { setShowModal(true); setEditingItem(null); setFormData({}); }} style={styles.addBtn}>
             + Agregar {tab}
           </button>
         )}
@@ -159,16 +197,21 @@ const Dashboard = () => {
           <thead>
             <tr>
               {columns.map(col => <th key={col} style={styles.th}>{col}</th>)}
-              {canDelete && <th style={styles.th}>Acciones</th>}
+              {(canEdit || canDelete) && <th style={styles.th}>Acciones</th>}
             </tr>
           </thead>
           <tbody>
             {items.map((item, i) => (
               <tr key={i}>
                 {columns.map(col => <td key={col} style={styles.td}>{String(item[col] || '')}</td>)}
-                {canDelete && (
+                {(canEdit || canDelete) && (
                   <td style={styles.td}>
-                    <button onClick={() => handleDelete(getDeleteId(item, tab), tab)} style={styles.deleteBtn}>X</button>
+                    {canEdit && (
+                      <button onClick={() => handleEdit(item, tab)} style={styles.editBtn}>Editar</button>
+                    )}
+                    {canDelete && (
+                      <button onClick={() => handleDelete(getDeleteId(item, tab), tab)} style={styles.deleteBtn}>X</button>
+                    )}
                   </td>
                 )}
               </tr>
@@ -183,20 +226,51 @@ const Dashboard = () => {
   const renderModal = () => (
     <div style={styles.modalOverlay}>
       <div style={styles.modal}>
-        <h3>Agregar {activeTab}</h3>
-        {getFormFields().map(field => (
-          <input
-            key={field}
-            type={field === 'contraseña' ? 'password' : 'text'}
-            placeholder={field}
-            value={formData[field] || ''}
-            onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-            style={styles.input}
-          />
-        ))}
+        <h3>{editingItem ? 'Editar' : 'Agregar'} {activeTab}</h3>
+        {getFormFields().map(field => {
+          if (field === 'rol') {
+            return (
+              <select
+                key={field}
+                value={formData[field] || 'cliente'}
+                onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+                style={styles.input}
+              >
+                <option value="cliente">Cliente</option>
+                <option value="mecanico">Mecanico</option>
+              </select>
+            );
+          }
+          if (field === 'estado') {
+            return (
+              <select
+                key={field}
+                value={formData[field] || 'pendiente'}
+                onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+                style={styles.input}
+              >
+                <option value="pendiente">Pendiente</option>
+                <option value="en_proceso">En Proceso</option>
+                <option value="completado">Completado</option>
+              </select>
+            );
+          }
+          return (
+            <input
+              key={field}
+              type={field === 'contrasena' ? 'password' : 'text'}
+              placeholder={field === 'contrasena' ? 'contraseña' : field}
+              value={formData[field] || ''}
+              onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+              style={styles.input}
+            />
+          );
+        })}
         <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-          <button onClick={handleCreate} style={styles.saveBtn}>Guardar</button>
-          <button onClick={() => { setShowModal(false); setFormData({}); }} style={styles.cancelBtn}>Cancelar</button>
+          <button onClick={editingItem ? handleUpdate : handleCreate} style={styles.saveBtn}>
+            {editingItem ? 'Actualizar' : 'Guardar'}
+          </button>
+          <button onClick={() => { setShowModal(false); setEditingItem(null); setFormData({}); }} style={styles.cancelBtn}>Cancelar</button>
         </div>
       </div>
     </div>
@@ -249,6 +323,7 @@ const styles = {
   statCard: { background: 'white', padding: '20px', borderRadius: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' },
   statNumber: { fontSize: '36px', fontWeight: 'bold', color: '#007bff', margin: '10px 0 0 0' },
   addBtn: { padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '5px' },
+  editBtn: { padding: '5px 10px', background: '#007bff', color: 'white', border: 'none', cursor: 'pointer', marginRight: '5px' },
   deleteBtn: { padding: '5px 10px', background: '#dc3545', color: 'white', border: 'none', cursor: 'pointer' },
   modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center' },
   modal: { background: 'white', padding: '20px', borderRadius: '10px', width: '400px' },

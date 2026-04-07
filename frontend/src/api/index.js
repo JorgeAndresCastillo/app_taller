@@ -27,6 +27,11 @@ export const api = {
       headers: getHeaders(),
       body: JSON.stringify(data)
     }).then(res => res.json()),
+    update: (id, data) => fetch(`${API_URL}/usuarios/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(res => res.json()),
     delete: (id) => fetch(`${API_URL}/usuarios/${id}`, {
       method: 'DELETE',
       headers: getHeaders()
@@ -42,6 +47,11 @@ export const api = {
     list: () => fetch(`${API_URL}/coches`, { headers: getHeaders() }).then(res => res.json()),
     create: (data) => fetch(`${API_URL}/coches`, {
       method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(res => res.json()),
+    update: (id, data) => fetch(`${API_URL}/coches/${id}`, {
+      method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(data)
     }).then(res => res.json()),
@@ -76,6 +86,10 @@ export const api = {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(data)
+    }).then(res => res.json()),
+    delete: (id) => fetch(`${API_URL}/trabajos/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders()
     }).then(res => res.json())
   },
 
@@ -101,6 +115,11 @@ export const api = {
     list: () => fetch(`${API_URL}/inventario`, { headers: getHeaders() }).then(res => res.json()),
     create: (data) => fetch(`${API_URL}/inventario`, {
       method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(res => res.json()),
+    update: (id, data) => fetch(`${API_URL}/inventario/${id}`, {
+      method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(data)
     }).then(res => res.json()),

@@ -16,13 +16,20 @@ const authenticate = (req, res, next) => {
 
 router.post("/", authenticate, async (req, res) => {
   try {
-    const { coche_id, descripcion, prioridad } = req.body;
-    if (!coche_id || !descripcion) {
-      return res.status(400).json({ msg: "Coche y descripción obligatorios" });
+    const { matricula, descripcion, prioridad } = req.body;
+    if (!matricula || !descripcion) {
+      return res.status(400).json({ msg: "Matrícula y descripción obligatorios" });
+    }
+    const coche = await pool.query("SELECT id, cliente_id FROM coches WHERE matricula = $1", [matricula]);
+    if (coche.rows.length === 0) {
+      return res.status(404).json({ msg: "Coche no encontrado" });
+    }
+    if (coche.rows[0].cliente_id !== req.user.id && req.user.rol === "cliente") {
+      return res.status(403).json({ msg: "Solo puedes reportar anomalías para tus coches" });
     }
     const result = await pool.query(
       "INSERT INTO anomalias (coche_id, cliente_id, descripcion, prioridad) VALUES ($1, $2, $3, $4) RETURNING *",
-      [coche_id, req.user.id, descripcion, prioridad || "media"]
+      [coche.rows[0].id, req.user.id, descripcion, prioridad || "media"]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {

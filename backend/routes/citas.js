@@ -16,13 +16,20 @@ const authenticate = (req, res, next) => {
 
 router.post("/", authenticate, async (req, res) => {
   try {
-    const { coche_id, fecha, hora, descripcion } = req.body;
-    if (!coche_id || !fecha || !hora) {
-      return res.status(400).json({ msg: "Coche, fecha y hora obligatorios" });
+    const { matricula, fecha, hora, descripcion } = req.body;
+    if (!matricula || !fecha || !hora) {
+      return res.status(400).json({ msg: "Matrícula, fecha y hora obligatorios" });
+    }
+    const coche = await pool.query("SELECT id, cliente_id FROM coches WHERE matricula = $1", [matricula]);
+    if (coche.rows.length === 0) {
+      return res.status(404).json({ msg: "Coche no encontrado" });
+    }
+    if (coche.rows[0].cliente_id !== req.user.id && req.user.rol === "cliente") {
+      return res.status(403).json({ msg: "Solo puedes crear citas para tus coches" });
     }
     const result = await pool.query(
       "INSERT INTO citas (coche_id, cliente_id, fecha, hora, descripcion) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [coche_id, req.user.id, fecha, hora, descripcion]
+      [coche.rows[0].id, req.user.id, fecha, hora, descripcion]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
