@@ -2,8 +2,8 @@ import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { api } from '../api';
-// import { Canvas } from '@react-three/fiber';
-// import { OrbitControls } from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
 
 function Car3DViewer({ color = "#3b82f6" }) {
   return (
@@ -246,8 +246,13 @@ const ClientDashboard = () => {
                   {selectedCoche ? (
                     <>
                       <div style={styles.viewer3d}>
-                        <div style={styles.carPlaceholder}>🚗</div>
-                        <div style={styles.viewerHint}>Vista del vehículo</div>
+                        <Canvas camera={{ position: [4, 2, 4] }}>
+                          <OrbitControls />
+                          <ambientLight intensity={0.5} />
+                          <directionalLight position={[10, 10, 5]} intensity={1} />
+                          <Car3DViewer color="#3b82f6" />
+                        </Canvas>
+                        <div style={styles.viewerHint}>Arrastra para rotar</div>
                       </div>
 
                       <div style={styles.carDetails}>
