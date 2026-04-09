@@ -96,7 +96,6 @@ router.delete("/:matricula", authenticate, async (req, res) => {
     await pool.query("DELETE FROM historial WHERE coche_id = $1", [cocheId]);
     await pool.query("DELETE FROM citas WHERE coche_id = $1", [cocheId]);
     await pool.query("DELETE FROM trabajos WHERE coche_id = $1", [cocheId]);
-    await pool.query("DELETE FROM anomalias WHERE coche_id = $1", [cocheId]);
     const result = await pool.query("DELETE FROM coches WHERE matricula = $1 RETURNING *", [req.params.matricula]);
     res.json({ msg: "Coche eliminado" });
   } catch (err) {

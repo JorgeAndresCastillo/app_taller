@@ -60,6 +60,7 @@ router.get("/", authenticate, async (req, res) => {
 });
 
 router.put("/:id/estado", authenticate, async (req, res) => {
+  const client = await pool.connect();
   try {
     if (req.user.rol !== "admin" && req.user.rol !== "mecanico") {
       return res.status(403).json({ msg: "Solo admin o mecanico pueden cambiar estado" });
@@ -70,6 +71,8 @@ router.put("/:id/estado", authenticate, async (req, res) => {
       return res.status(400).json({ msg: "Estado inválido" });
     }
     
+    await client.query("BEGIN");
+    
     let query, params;
     if (req.user.rol === "mecanico" && estado === "aceptado") {
       query = "UPDATE citas SET estado = $1, mecanico_id = $2 WHERE id = $3 AND estado = 'pendiente' RETURNING *";
@@ -79,12 +82,35 @@ router.put("/:id/estado", authenticate, async (req, res) => {
       params = [estado, req.params.id];
     }
     
-    const result = await pool.query(query, params);
-    if (result.rows.length === 0) return res.status(404).json({ msg: "Cita no encontrada o ya fue procesada" });
+    const result = await client.query(query, params);
+    if (result.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ msg: "Cita no encontrada o ya fue procesada" });
+    }
+    
+    if (estado === "aceptado") {
+      const cita = result.rows[0];
+      const trabajoExist = await client.query(
+        "SELECT id FROM trabajos WHERE cita_id = $1",
+        [cita.id]
+      );
+      
+      if (trabajoExist.rows.length === 0) {
+        await client.query(
+          "INSERT INTO trabajos (cita_id, coche_id, mecanico_id, descripcion, estado) VALUES ($1, $2, $3, $4, 'pendiente')",
+          [cita.id, cita.coche_id, req.user.id, cita.descripcion]
+        );
+      }
+    }
+    
+    await client.query("COMMIT");
     res.json(result.rows[0]);
   } catch (err) {
+    await client.query("ROLLBACK");
     console.error(err.message);
     res.status(500).json({ msg: "Error del servidor" });
+  } finally {
+    client.release();
   }
 });
 

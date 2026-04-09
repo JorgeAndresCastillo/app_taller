@@ -108,7 +108,6 @@ router.delete("/:id", authenticate, async (req, res) => {
     for (const coche of coches.rows) {
       await pool.query("DELETE FROM historial WHERE coche_id = $1", [coche.id]);
     }
-    await pool.query("DELETE FROM anomalias WHERE cliente_id = $1", [req.params.id]);
     await pool.query("DELETE FROM citas WHERE cliente_id = $1", [req.params.id]);
     await pool.query("DELETE FROM trabajos WHERE mecanico_id = $1", [req.params.id]);
     await pool.query("DELETE FROM coches WHERE cliente_id = $1", [req.params.id]);

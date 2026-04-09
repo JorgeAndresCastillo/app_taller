@@ -101,6 +101,16 @@ export const api = {
       headers: getHeaders(),
       body: JSON.stringify(data)
     }).then(res => res.json()),
+    iniciar: (id) => fetch(`${API_URL}/trabajos/${id}/iniciar`, {
+      method: 'PUT',
+      headers: getHeaders()
+    }).then(res => res.json()),
+    completar: (id, data) => fetch(`${API_URL}/trabajos/${id}/completar`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    }).then(res => res.json()),
+    misTrabajos: () => fetch(`${API_URL}/trabajos/mis-trabajos`, { headers: getHeaders() }).then(res => res.json()),
     delete: (id) => fetch(`${API_URL}/trabajos/${id}`, {
       method: 'DELETE',
       headers: getHeaders()
@@ -108,24 +118,11 @@ export const api = {
   },
 
   historial: {
-    list: () => fetch(`${API_URL}/historial`, { headers: getHeaders() }).then(res => res.json())
-  },
-
-  anomalias: {
-    list: () => fetch(`${API_URL}/anomalias`, { headers: getHeaders() }).then(res => res.json()),
-    create: (data) => fetch(`${API_URL}/anomalias`, {
+    list: () => fetch(`${API_URL}/historial`, { headers: getHeaders() }).then(res => res.json()),
+    create: (data) => fetch(`${API_URL}/historial`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(data)
-    }).then(res => res.json()),
-    updateEstado: (id, estado) => fetch(`${API_URL}/anomalias/${id}/estado`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ estado })
-    }).then(res => res.json()),
-    delete: (id) => fetch(`${API_URL}/anomalias/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders()
     }).then(res => res.json())
   },
 

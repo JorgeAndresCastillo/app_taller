@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import ClientDashboard from './pages/ClientDashboard';
+import MisTrabajos from './pages/MisTrabajos';
 
 const AdminDashboard = () => {
   const { user } = useContext(AuthContext);
@@ -17,7 +18,25 @@ const AdminDashboard = () => {
     return <Navigate to="/cliente" replace />;
   }
   
+  if (user.rol === 'mecanico') {
+    return <Navigate to="/mecanico" replace />;
+  }
+  
   return <Dashboard />;
+};
+
+const MecanicoDashboard = () => {
+  const { user } = useContext(AuthContext);
+  
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+  
+  if (user.rol !== 'mecanico') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <MisTrabajos />;
 };
 
 const ClienteDashboard = () => {
@@ -54,6 +73,11 @@ function App() {
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/mecanico" element={
+            <ProtectedRoute>
+              <MecanicoDashboard />
             </ProtectedRoute>
           } />
           <Route path="/cliente" element={

@@ -7,7 +7,7 @@ const pool = require("../db"); // Conexión a PostgreSQL
 // POST /auth/register
 router.post("/register", async (req, res) => {
   try {
-    const { nombre, dni, email, contrasena, movil } = req.body;
+    const { nombre, dni, email, contrasena, movil, rol } = req.body;
 
     // Validación básica
     if (!nombre || !dni || !email || !contrasena || !movil) {
@@ -32,8 +32,8 @@ router.post("/register", async (req, res) => {
 
     // Insertar usuario en la base de datos
     const newUser = await pool.query(
-      "INSERT INTO usuarios (nombre, dni, email, contrasena, movil) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [nombre, dni, email, hashedPassword, movil],
+      "INSERT INTO usuarios (nombre, dni, email, contrasena, movil, rol) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [nombre, dni, email, hashedPassword, movil, rol || "cliente"],
     );
 
     // Respuesta exitosa

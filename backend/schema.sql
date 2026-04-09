@@ -17,6 +17,8 @@ CREATE TABLE coches (
     anio INTEGER,
     kilometraje INTEGER,
     cliente_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+    estado VARCHAR(20) DEFAULT 'pendiente',
+    itv_vigencia DATE,
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -38,7 +40,10 @@ CREATE TABLE trabajos (
     mecanico_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
     coche_id INTEGER REFERENCES coches(id) ON DELETE CASCADE,
     descripcion TEXT,
+    precio DECIMAL(10,2),
     estado VARCHAR(20) DEFAULT 'pendiente',
+    hora_inicio TIMESTAMP,
+    hora_fin TIMESTAMP,
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -47,6 +52,11 @@ CREATE TABLE historial (
     coche_id INTEGER REFERENCES coches(id) ON DELETE CASCADE,
     descripcion TEXT,
     tipo VARCHAR(50),
+    kilometraje INTEGER,
+    precio DECIMAL(10,2),
+    fecha DATE DEFAULT CURRENT_DATE,
+    siguiente_fecha DATE,
+    siguiente_kilometraje INTEGER,
     mecanico_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -66,15 +76,6 @@ CREATE TABLE facturas (
     cliente_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
     importe DECIMAL(10,2),
     fecha DATE,
-    estado VARCHAR(20) DEFAULT 'pendiente',
-    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE anomalias (
-    id SERIAL PRIMARY KEY,
-    coche_id INTEGER REFERENCES coches(id) ON DELETE CASCADE,
-    cliente_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
-    descripcion TEXT,
     estado VARCHAR(20) DEFAULT 'pendiente',
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

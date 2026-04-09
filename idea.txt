@@ -99,11 +99,11 @@ Construida con:
 
 ---
 
-## ⚠️ 9. Anomalías (cliente → taller)
+## ⚠️ 9. Anomalías (REMOVIDO - integrado en citas/trabajos)
 
 * Cliente reporta problemas
 * El taller los gestiona
-* Se pueden convertir en citas
+* Se convierten en citas directamente
 
 ---
 

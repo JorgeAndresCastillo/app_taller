@@ -35,7 +35,6 @@ const Dashboard = () => {
     ...(isAdmin || isMecanico ? [{ id: 'inventario', label: 'Inventario', icon: '📦' }] : []),
     ...(isAdmin ? [{ id: 'facturas', label: 'Facturación', icon: '💰' }] : []),
     { id: 'historial', label: 'Historial', icon: '📋' },
-    { id: 'anomalias', label: 'Anomalías', icon: '⚠️' },
   ];
 
   useEffect(() => {
@@ -77,8 +76,7 @@ const Dashboard = () => {
         trabajos: api.trabajos.list,
         inventario: api.inventario.list,
         facturas: api.facturas.list,
-        historial: api.historial.list,
-        anomalias: api.anomalias.list
+        historial: api.historial.list
       };
       if (fetchers[activeTab]) {
         const result = await fetchers[activeTab]();
@@ -102,7 +100,6 @@ const Dashboard = () => {
       else if (tipo === 'citas') await api.citas.delete(id);
       else if (tipo === 'trabajos') await api.trabajos.delete(id);
       else if (tipo === 'inventario') await api.inventario.delete(id);
-      else if (tipo === 'anomalias') await api.anomalias.delete(id);
       setData(prev => ({ ...prev, [tipo]: prev[tipo]?.filter(item => 
         tipo === 'coches' ? item.matricula !== id : item.id !== id
       )}));
@@ -150,7 +147,6 @@ const Dashboard = () => {
       else if (activeTab === 'citas') await api.citas.create(formData);
       else if (activeTab === 'trabajos') await api.trabajos.create(formData);
       else if (activeTab === 'inventario') await api.inventario.create(formData);
-      else if (activeTab === 'anomalias') await api.anomalias.create(formData);
       setShowModal(false);
       setFormData({});
       loadData();
@@ -167,8 +163,7 @@ const Dashboard = () => {
       trabajos: ['id', 'descripcion', 'precio', 'estado', 'matricula', 'mecanico_nombre'],
       inventario: ['id', 'nombre', 'categoria', 'stock', 'precio_venta'],
       facturas: ['id', 'fecha', 'importe', 'estado'],
-      historial: ['id', 'tipo', 'descripcion', 'fecha', 'precio'],
-      anomalias: ['id', 'descripcion', 'estado', 'prioridad', 'matricula']
+      historial: ['id', 'tipo', 'descripcion', 'fecha', 'precio']
     };
     return columnsMap[tab] || [];
   };
@@ -179,8 +174,7 @@ const Dashboard = () => {
       coches: ['matricula', 'marca', 'modelo', 'anio', 'kilometraje'],
       citas: ['matricula', 'fecha', 'hora', 'descripcion'],
       trabajos: ['matricula', 'descripcion', 'precio', 'estado'],
-      inventario: ['nombre', 'descripcion', 'categoria', 'stock', 'precio_compra', 'precio_venta'],
-      anomalias: ['matricula', 'descripcion', 'prioridad']
+      inventario: ['nombre', 'descripcion', 'categoria', 'stock', 'precio_compra', 'precio_venta']
     };
     return fields[activeTab] || [];
   };
@@ -269,12 +263,12 @@ const Dashboard = () => {
   const renderTable = (tab) => {
     const columns = getColumns(tab);
     const items = data[tab] || [];
-    const canDelete = (isAdmin || isMecanico) && ['usuarios', 'coches', 'citas', 'trabajos', 'inventario', 'anomalias'].includes(tab);
+    const canDelete = (isAdmin || isMecanico) && ['usuarios', 'coches', 'citas', 'trabajos', 'inventario'].includes(tab);
     const canCreate = (isAdmin || isMecanico || tab === 'coches' || tab === 'citas') && getFormFields().length > 0;
     const canEdit = (isAdmin || isMecanico) && ['usuarios', 'coches', 'trabajos', 'inventario', 'citas'].includes(tab);
     
     const getLabel = (t) => {
-      const labels = { usuarios: 'Usuario', coches: 'Vehículo', citas: 'Cita', trabajos: 'Trabajo', inventario: 'Producto', anomalias: 'Anomalía' };
+      const labels = { usuarios: 'Usuario', coches: 'Vehículo', citas: 'Cita', trabajos: 'Trabajo', inventario: 'Producto' };
       return labels[t] || t;
     };
 
